@@ -1,6 +1,7 @@
 import Transform from "./Transform";
 import Layer from "./Layer";
 
+type Atlas = { [key: string]: number[]; };
 
 export default class Sprite {
 
@@ -15,8 +16,8 @@ export default class Sprite {
     public globalVisible: boolean = false;
     public globalAlpha: number = 1;
 
-    protected width: number = 1;
-    protected height: number = 1;
+    protected width: number = 0;
+    protected height: number = 0;
 
     protected pivotX: number = 0;
     protected pivotY: number = 0;
@@ -33,6 +34,11 @@ export default class Sprite {
     public readonly childrens: Sprite[] = [];
     protected readonly hierarchy: Sprite[] = [];
 
+    constructor(texture?: HTMLImageElement, atlas?: Atlas, frameId?: string) {
+        if (texture) {
+            this.setTexture(texture, atlas, frameId);
+        }
+    }
 
     set x(value: number) {
         this.localTransform.x = value;
@@ -98,15 +104,15 @@ export default class Sprite {
         return this.localVisible;
     }
 
-    public setTexture(texture: HTMLImageElement, atlas?: {[key: string]: number[]}, spriteId?: string): void {
-        if (spriteId && atlas && !atlas[spriteId]) {
-            console.log("no sprite " + spriteId + " in atlas", atlas);
+    public setTexture(texture: HTMLImageElement, atlas?: Atlas, frameId?: string): void {
+        if (frameId && atlas && !atlas[frameId]) {
+            console.log("no sprite " + frameId + " in atlas", atlas);
             return;
         }
 
         this.texture = texture;
-        if (atlas && spriteId) {
-            this.setRect(atlas[spriteId]);
+        if (atlas && frameId) {
+            this.setRect(atlas[frameId]);
         } else {
             this.setRect([0, 0, this.texture.width, this.texture.height]);
         }
@@ -127,7 +133,7 @@ export default class Sprite {
             this.width / 2, -this.height / 2,
             -this.width / 2, -this.height / 2
         ];
-        
+
         //this.mesh.vertexes = [0, 0, this.width, 0, this.width, -this.height, 0, -this.height];
 
         if (this.rect && this.texture) {

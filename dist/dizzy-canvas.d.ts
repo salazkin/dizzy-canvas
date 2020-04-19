@@ -55,6 +55,9 @@ export declare class Layer {
 	removeChild(sprite: Sprite): void;
 	kill(): void;
 }
+export declare type Atlas = {
+	[key: string]: number[];
+};
 export declare class Sprite {
 	name: string;
 	layer: Layer | null;
@@ -80,6 +83,7 @@ export declare class Sprite {
 	parent: Sprite | null;
 	readonly childrens: Sprite[];
 	protected readonly hierarchy: Sprite[];
+	constructor(texture?: HTMLImageElement, atlas?: Atlas, frameId?: string);
 	set x(value: number);
 	get x(): number;
 	set y(value: number);
@@ -94,9 +98,7 @@ export declare class Sprite {
 	get alpha(): number;
 	set visible(value: boolean);
 	get visible(): boolean;
-	setTexture(texture: HTMLImageElement, atlas?: {
-		[key: string]: number[];
-	}, spriteId?: string): void;
+	setTexture(texture: HTMLImageElement, atlas?: Atlas, frameId?: string): void;
 	setRect(rect: number[]): void;
 	updateMesh(): void;
 	pokeTransform(): void;

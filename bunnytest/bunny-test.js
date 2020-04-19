@@ -36,15 +36,14 @@ function onEnterFrame() {
 }
 function addTestBunnys() {
     for (let i = 0; i < 10; i++) {
-        let bunny = new Sprite();
-        bunny.setTexture(bunnyImg);
+        let bunny = new Sprite(bunnyImg);
         bunny.scaleX = bunny.scaleY = 0.5 + Math.random() * 0.5;
         bunny.rotation = (Math.random() - 0.5) * 360;
         layer.addChild(bunny);
         bunnysData.push({ bunny: bunny, speedX: Math.random() * 10, speedY: (Math.random() * 10) - 5 });
     }
 }
-;
+
 function updateBunnys() {
     bunnysData.forEach(data => {
         let bunny = data.bunny;

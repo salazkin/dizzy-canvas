@@ -101,7 +101,7 @@ class Transform {
 }
 
 class Sprite {
-    constructor() {
+    constructor(texture, atlas, frameId) {
         this.name = "Sprite";
         this.layer = null;
         this.texture = null;
@@ -110,8 +110,8 @@ class Sprite {
         this.meshUpdated = false;
         this.globalVisible = false;
         this.globalAlpha = 1;
-        this.width = 1;
-        this.height = 1;
+        this.width = 0;
+        this.height = 0;
         this.pivotX = 0;
         this.pivotY = 0;
         this.visibleUpdated = false;
@@ -123,6 +123,9 @@ class Sprite {
         this.parent = null;
         this.childrens = [];
         this.hierarchy = [];
+        if (texture) {
+            this.setTexture(texture, atlas, frameId);
+        }
     }
     set x(value) {
         this.localTransform.x = value;
@@ -174,14 +177,14 @@ class Sprite {
     get visible() {
         return this.localVisible;
     }
-    setTexture(texture, atlas, spriteId) {
-        if (spriteId && atlas && !atlas[spriteId]) {
-            console.log("no sprite " + spriteId + " in atlas", atlas);
+    setTexture(texture, atlas, frameId) {
+        if (frameId && atlas && !atlas[frameId]) {
+            console.log("no sprite " + frameId + " in atlas", atlas);
             return;
         }
         this.texture = texture;
-        if (atlas && spriteId) {
-            this.setRect(atlas[spriteId]);
+        if (atlas && frameId) {
+            this.setRect(atlas[frameId]);
         }
         else {
             this.setRect([0, 0, this.texture.width, this.texture.height]);
