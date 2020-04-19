@@ -1,5 +1,18 @@
-import { Sprite, Renderer } from "../dist/index.js";
-const renderer = new Renderer(800, 600);
+import { Sprite, Renderer } from "../dist/dizzy-canvas.js";
+
+const canvas = document.createElement('canvas');
+canvas.style.position = "absolute";
+canvas.style.left = "0%";
+canvas.style.top = "0%";
+canvas.style.width = "100%";
+canvas.style.height = "100%";
+canvas.width = 800;
+canvas.height = 600;
+
+document.body.appendChild(canvas);
+
+
+const renderer = new Renderer(canvas);
 let maxX = renderer.sceneWidth;
 let minX = 0;
 let maxY = renderer.sceneHeight;
@@ -7,9 +20,8 @@ let minY = 0;
 let gravity = 0.5;
 let bunnysData = [];
 let layer = renderer.getLayer("GameLayer");
-;
-const label = document.createElement("div");
-document.body.appendChild(label);
+
+
 let bunnyImg = new Image();
 bunnyImg.src = "bunny.png";
 bunnyImg.id = "bunny";

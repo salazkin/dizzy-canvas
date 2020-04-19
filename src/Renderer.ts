@@ -29,25 +29,16 @@ export default class Renderer {
     private readonly vertBuffer: WebGLBuffer | null = null;
     private currentTexture: undefined | HTMLImageElement;
 
-    constructor(width: number, height: number) {
-        this.sceneWidth = width;
-        this.sceneHeight = height;
+    constructor(canvas: HTMLCanvasElement) {
+        this.canvas = canvas;
 
-        this.canvas = document.createElement('canvas');
-        this.canvas.style.position = "absolute";
-        this.canvas.style.left = "0%";
-        this.canvas.style.top = "0%";
-        this.canvas.style.width = "100%";
-        this.canvas.style.height = "100%";
-        this.canvas.width = this.sceneWidth;
-        this.canvas.height = this.sceneHeight;
+        this.sceneWidth = this.canvas.width;
+        this.sceneHeight = this.canvas.height;
 
         this.ratio = {
             x: 2 / this.canvas.width,
             y: 2 / this.canvas.height
         };
-
-        document.body.appendChild(this.canvas);
 
         this.vertexData = new Float32Array(MAX_SPRITES * VERTEX_DATA_LENGTH);
         this.indexData = new Uint16Array(MAX_SPRITES * INDEX_DATA_LENGTH);

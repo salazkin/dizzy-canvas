@@ -9,6 +9,7 @@
         "baseUrl": "src",
         "sourceMap": false,
         "strict": true,
-        "removeComments": true
+        "removeComments": true,
+        "declaration": true
     }
 }

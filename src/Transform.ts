@@ -1,4 +1,4 @@
-type Matrix = { a: number, b: number, c: number, d: number, tx: number, ty: number; };
+export type Matrix = { a: number, b: number, c: number, d: number, tx: number, ty: number; };
 
 export default class Transform {
     public x: number = 0;

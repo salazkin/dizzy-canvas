@@ -2,10 +2,6 @@ import Transform from "./Transform";
 import Layer from "./Layer";
 
 
-type Atlas = {
-    [key: string]: number[];
-};
-
 export default class Sprite {
 
     public name = "Sprite";
@@ -102,7 +98,7 @@ export default class Sprite {
         return this.localVisible;
     }
 
-    public setTexture(texture: HTMLImageElement, atlas?: Atlas, spriteId?: string): void {
+    public setTexture(texture: HTMLImageElement, atlas?: {[key: string]: number[]}, spriteId?: string): void {
         if (spriteId && atlas && !atlas[spriteId]) {
             console.log("no sprite " + spriteId + " in atlas", atlas);
             return;

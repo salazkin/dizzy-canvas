@@ -1,14 +1,16 @@
 {
     "name": "dizzy-canvas",
-    "version": "0.0.2",
+    "version": "0.0.3",
+    "description": "Simple 2d rendering engine.",
     "keywords": ["webgl", "gl", "rendering", "2d", "engine"],
     "main": "dist/dizzy-canvas.js",
-    "homepage":"https://github.com/salazkin/dizzy-canvas",
-    "dependencies": {
-        "rollup": "^2.6.1",
+    "typings": "dist/dizzy-canvas.d.ts",
+    "homepage": "https://github.com/salazkin/dizzy-canvas",
+    "devDependencies": {
+        "dts-bundle-generator": "^4.2.0",
         "typescript": "^3.8.3"
     },
     "scripts": {
-        "start": "tsc && rollup -c"
+        "start": "tsc && rollup -c &&  dts-bundle-generator -o dist/dizzy-canvas.d.ts src/Lib.ts"
     }
 }

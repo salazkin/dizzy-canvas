@@ -391,7 +391,7 @@ const MAX_SPRITES = 100000;
 const VERTEX_DATA_LENGTH = (4 + 4 + 3) * 4;
 const INDEX_DATA_LENGTH = 6;
 class Renderer {
-    constructor(width, height) {
+    constructor(canvas) {
         this.layers = [];
         this.vertexOffset = 0;
         this.indexOffset = 0;
@@ -402,21 +402,13 @@ class Renderer {
         this.vec2UniformLoc = null;
         this.indexBuffer = null;
         this.vertBuffer = null;
-        this.sceneWidth = width;
-        this.sceneHeight = height;
-        this.canvas = document.createElement('canvas');
-        this.canvas.style.position = "absolute";
-        this.canvas.style.left = "0%";
-        this.canvas.style.top = "0%";
-        this.canvas.style.width = "100%";
-        this.canvas.style.height = "100%";
-        this.canvas.width = this.sceneWidth;
-        this.canvas.height = this.sceneHeight;
+        this.canvas = canvas;
+        this.sceneWidth = this.canvas.width;
+        this.sceneHeight = this.canvas.height;
         this.ratio = {
             x: 2 / this.canvas.width,
             y: 2 / this.canvas.height
         };
-        document.body.appendChild(this.canvas);
         this.vertexData = new Float32Array(MAX_SPRITES * VERTEX_DATA_LENGTH);
         this.indexData = new Uint16Array(MAX_SPRITES * INDEX_DATA_LENGTH);
         for (let i = 0; i < MAX_SPRITES; i++) {
