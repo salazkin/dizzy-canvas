@@ -2,6 +2,8 @@
     "name": "dizzy-canvas",
     "version": "0.0.2",
     "keywords": ["webgl", "gl", "rendering", "2d", "engine"],
+    "main": "dist/dizzy-canvas.js",
+    "homepage":"https://github.com/salazkin/dizzy-canvas",
     "dependencies": {
         "rollup": "^2.6.1",
         "typescript": "^3.8.3"
