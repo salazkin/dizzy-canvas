@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+        "lib": [
+            "dom",
+            "es6"
+        ],
+        "module": "es6",
+        "target": "es2017",
+        "baseUrl": "src",
+        "sourceMap": false,
+        "strict": true,
+        "removeComments": true
+    }
+}

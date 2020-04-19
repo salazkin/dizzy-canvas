@@ -1,0 +1,12 @@
+{
+    "name": "dizzy-canvas",
+    "version": "0.0.2",
+    "keywords": ["webgl", "gl", "rendering", "2d", "engine"],
+    "dependencies": {
+        "rollup": "^2.6.1",
+        "typescript": "^3.8.3"
+    },
+    "scripts": {
+        "start": "tsc && rollup -c"
+    }
+}
