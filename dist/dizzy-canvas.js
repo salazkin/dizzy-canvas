@@ -103,7 +103,6 @@ class Transform {
 class Sprite {
     constructor(texture, atlas, frameId) {
         this.name = "Sprite";
-        this.layer = null;
         this.texture = null;
         this.rect = null;
         this.mesh = { vertexes: [], uv: [] };
@@ -195,7 +194,6 @@ class Sprite {
         this.width = this.rect[2];
         this.height = this.rect[3];
         this.meshUpdated = false;
-        this.updateRootLayer();
     }
     updateMesh() {
         this.mesh.vertexes = [
@@ -216,21 +214,11 @@ class Sprite {
     pokeTransform() {
         this.localTransform.matrixUpdated = false;
         this.transformUpdated = false;
-        this.updateRootLayer();
         this.childrens.forEach(children => children.transformUpdated = false);
     }
     pokeVisible() {
         this.visibleUpdated = false;
-        this.updateRootLayer();
         this.childrens.forEach(children => children.visibleUpdated = false);
-    }
-    updateRootLayer() {
-        if (this.parent) {
-            this.parent.updateRootLayer();
-        }
-        if (this.layer) {
-            this.layer.redraw = true;
-        }
     }
     addChild(node) {
         if (node.parent) {
@@ -240,7 +228,6 @@ class Sprite {
         node.updateHierarchy();
         node.updateGlobalAlpha();
         this.childrens.push(node);
-        this.updateRootLayer();
         return node;
     }
     removeChild(node) {
@@ -256,7 +243,6 @@ class Sprite {
             node.parent = null;
             node.updateHierarchy();
         }
-        this.updateRootLayer();
     }
     updateHierarchy() {
         this.hierarchy.length = 0;
@@ -328,74 +314,12 @@ class Sprite {
     }
 }
 
-class Layer {
-    constructor(id, width, height) {
-        this.root = new Sprite();
-        this.redraw = false;
-        this.maskX = 0;
-        this.maskY = 0;
-        this.maskLeftBound = 0;
-        this.maskBottomBound = 0;
-        this.root.layer = this;
-        this.root.name = id;
-        this.id = id;
-        this.gameHeight = this.maskHeight = this.maskTopBound = height;
-        this.gameWidth = this.maskWidth = this.maskRightBound = width;
-    }
-    set x(value) {
-        this.maskX = value;
-        this.updateMaskBounds();
-    }
-    get x() {
-        return this.maskX;
-    }
-    set y(value) {
-        this.maskY = value;
-        this.updateMaskBounds();
-    }
-    get y() {
-        return this.maskY;
-    }
-    set width(value) {
-        this.maskWidth = value;
-        this.updateMaskBounds();
-    }
-    get width() {
-        return this.maskWidth;
-    }
-    set height(value) {
-        this.maskHeight = value;
-        this.updateMaskBounds();
-    }
-    get height() {
-        return this.maskHeight;
-    }
-    updateMaskBounds() {
-        this.maskLeftBound = this.maskX;
-        this.maskRightBound = this.maskX + this.maskWidth;
-        this.maskTopBound = this.gameHeight - this.maskY;
-        this.maskBottomBound = this.gameHeight - (this.maskY + this.maskHeight);
-    }
-    addChild(sprite) {
-        this.root.addChild(sprite);
-        this.redraw = true;
-        return sprite;
-    }
-    removeChild(sprite) {
-        this.root.removeChild(sprite);
-        this.redraw = true;
-    }
-    kill() {
-        this.root.kill();
-    }
-}
-
 const MAX_SPRITES = 100000;
 const VERTEX_DATA_LENGTH = (4 + 4 + 3) * 4;
 const INDEX_DATA_LENGTH = 6;
 class Renderer {
     constructor(canvas) {
-        this.layers = [];
+        this.stage = new Sprite();
         this.vertexOffset = 0;
         this.indexOffset = 0;
         this.textures = {};
@@ -519,31 +443,6 @@ class Renderer {
         }
         return context;
     }
-    getLayer(id) {
-        let layer;
-        for (let i = 0; i < this.layers.length; i++) {
-            if (this.layers[i].id == id) {
-                layer = this.layers[i];
-            }
-        }
-        if (!layer) {
-            layer = new Layer(id, this.sceneWidth, this.sceneHeight);
-            this.layers.push(layer);
-        }
-        return layer;
-    }
-    removeLayer(id) {
-        let layer;
-        for (let i = 0; i < this.layers.length; i++) {
-            if (this.layers[i].id == id) {
-                layer = this.layers[i];
-                this.layers.splice(i, 1);
-            }
-        }
-        if (layer) {
-            layer.kill();
-        }
-    }
     addTexture(image) {
         if (!image.id) {
             console.log("no texture id", image);
@@ -570,24 +469,10 @@ class Renderer {
         if (!this.gl) {
             return;
         }
-        let i;
-        let draw = true;
-        for (i = 0; i < this.layers.length; i++) {
-            if (this.layers[i].redraw) {
-                draw = true;
-            }
-        }
-        if (draw) {
-            this.gl.clear(this.gl.COLOR_BUFFER_BIT);
-            for (i = 0; i < this.layers.length; i++) {
-                let layer = this.layers[i];
-                this.draw(layer.root, layer.maskX, layer.maskY);
-                layer.redraw = false;
-                this.drawTriangles();
-            }
-        }
+        this.draw(this.stage);
+        this.drawTriangles();
     }
-    draw(sprite, offsetX, offsetY) {
+    draw(sprite) {
         sprite.updateGlobalVisible();
         if (sprite.globalVisible) {
             sprite.updateGlobalTransform();
@@ -606,8 +491,7 @@ class Renderer {
                 let vertexes = sprite.mesh.vertexes;
                 let uv = sprite.mesh.uv;
                 let tr = sprite.globalTransform;
-                let i;
-                for (i = 0; i < vertexes.length; i += 2) {
+                for (let i = 0; i < vertexes.length; i += 2) {
                     this.vertexData[this.vertexOffset++] = vertexes[i];
                     this.vertexData[this.vertexOffset++] = vertexes[i + 1];
                     this.vertexData[this.vertexOffset++] = tr.x;
@@ -623,9 +507,7 @@ class Renderer {
                 this.indexOffset += INDEX_DATA_LENGTH;
             }
         }
-        for (let k = 0; k < sprite.childrens.length; k++) {
-            this.draw(sprite.childrens[k], offsetX, offsetY);
-        }
+        sprite.childrens.forEach(this.draw.bind(this));
     }
     drawTriangles() {
         if (!this.gl) {
@@ -640,4 +522,4 @@ class Renderer {
     }
 }
 
-export { Layer, Renderer, Sprite, Transform };
+export { Renderer, Sprite, Transform };

@@ -1,12 +1,10 @@
 import Transform from "./Transform";
-import Layer from "./Layer";
 
 type Atlas = { [key: string]: number[]; };
 
 export default class Sprite {
 
     public name = "Sprite";
-    public layer: Layer | null = null;
 
     public texture: HTMLImageElement | null = null;
     protected rect: number[] | null = null;
@@ -123,7 +121,6 @@ export default class Sprite {
         this.width = this.rect[2];
         this.height = this.rect[3];
         this.meshUpdated = false;
-        this.updateRootLayer();
     }
 
     public updateMesh(): void {
@@ -150,23 +147,12 @@ export default class Sprite {
     public pokeTransform(): void {
         this.localTransform.matrixUpdated = false;
         this.transformUpdated = false;
-        this.updateRootLayer();
         this.childrens.forEach(children => children.transformUpdated = false);
     }
 
     public pokeVisible(): void {
         this.visibleUpdated = false;
-        this.updateRootLayer();
         this.childrens.forEach(children => children.visibleUpdated = false);
-    }
-
-    public updateRootLayer(): void {
-        if (this.parent) {
-            this.parent.updateRootLayer();
-        }
-        if (this.layer) {
-            this.layer.redraw = true;
-        }
     }
 
     public addChild(node: Sprite): Sprite {
@@ -179,7 +165,6 @@ export default class Sprite {
         node.updateGlobalAlpha();
         this.childrens.push(node);
 
-        this.updateRootLayer();
         return node;
     }
 
@@ -195,7 +180,6 @@ export default class Sprite {
             node.parent = null;
             node.updateHierarchy();
         }
-        this.updateRootLayer();
     }
 
     public updateHierarchy(): void {

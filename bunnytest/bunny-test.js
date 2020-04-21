@@ -11,7 +11,6 @@ canvas.height = 600;
 
 document.body.appendChild(canvas);
 
-
 const renderer = new Renderer(canvas);
 let maxX = renderer.sceneWidth;
 let minX = 0;
@@ -19,8 +18,6 @@ let maxY = renderer.sceneHeight;
 let minY = 0;
 let gravity = 0.5;
 let bunnysData = [];
-let layer = renderer.getLayer("GameLayer");
-
 
 let bunnyImg = new Image();
 bunnyImg.src = "bunny.png";
@@ -28,18 +25,20 @@ bunnyImg.id = "bunny";
 bunnyImg.addEventListener('load', () => {
     requestAnimationFrame(onEnterFrame);
 }, false);
+
 function onEnterFrame() {
     addTestBunnys();
     updateBunnys();
     renderer.present();
     requestAnimationFrame(onEnterFrame);
 }
+
 function addTestBunnys() {
     for (let i = 0; i < 10; i++) {
         let bunny = new Sprite(bunnyImg);
         bunny.scaleX = bunny.scaleY = 0.5 + Math.random() * 0.5;
         bunny.rotation = (Math.random() - 0.5) * 360;
-        layer.addChild(bunny);
+        renderer.stage.addChild(bunny);
         bunnysData.push({ bunny: bunny, speedX: Math.random() * 10, speedY: (Math.random() * 10) - 5 });
     }
 }
@@ -71,6 +70,7 @@ function updateBunnys() {
         }
     });
 }
+
 function onResize() {
     let sceneWidth = renderer.sceneWidth;
     let sceneHeight = renderer.sceneHeight;
@@ -86,8 +86,10 @@ function onResize() {
         updateGameContainer((stageWidth - (sceneWidth * scale)) / 2, 0, sceneWidth * scale, sceneHeight * scale);
     }
 }
+
 window.addEventListener('resize', onResize, false);
 onResize();
+
 function updateGameContainer(x, y, width, height) {
     document.body.style.position = "fixed";
     document.body.style.left = x.toFixed(2) + "px";

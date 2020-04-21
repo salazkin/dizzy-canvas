@@ -27,40 +27,11 @@ export declare class Transform {
 	concat(local: Transform, global: Transform): void;
 	copy(target: Transform): void;
 }
-export declare class Layer {
-	readonly root: Sprite;
-	id: string;
-	redraw: boolean;
-	gameHeight: number;
-	gameWidth: number;
-	maskX: number;
-	maskY: number;
-	maskWidth: number;
-	maskHeight: number;
-	maskLeftBound: number;
-	maskRightBound: number;
-	maskTopBound: number;
-	maskBottomBound: number;
-	constructor(id: string, width: number, height: number);
-	set x(value: number);
-	get x(): number;
-	set y(value: number);
-	get y(): number;
-	set width(value: number);
-	get width(): number;
-	set height(value: number);
-	get height(): number;
-	updateMaskBounds(): void;
-	addChild(sprite: Sprite): Sprite;
-	removeChild(sprite: Sprite): void;
-	kill(): void;
-}
 export declare type Atlas = {
 	[key: string]: number[];
 };
 export declare class Sprite {
 	name: string;
-	layer: Layer | null;
 	texture: HTMLImageElement | null;
 	protected rect: number[] | null;
 	readonly mesh: {
@@ -103,7 +74,6 @@ export declare class Sprite {
 	updateMesh(): void;
 	pokeTransform(): void;
 	pokeVisible(): void;
-	updateRootLayer(): void;
 	addChild(node: Sprite): Sprite;
 	removeChild(node: Sprite): void;
 	updateHierarchy(): void;
@@ -115,7 +85,7 @@ export declare class Sprite {
 	kill(): void;
 }
 export declare class Renderer {
-	private readonly layers;
+	readonly stage: Sprite;
 	sceneWidth: number;
 	sceneHeight: number;
 	private canvas;
@@ -138,11 +108,9 @@ export declare class Renderer {
 	constructor(canvas: HTMLCanvasElement);
 	resize(width: number, height: number): void;
 	createContext(): null | WebGLRenderingContext;
-	getLayer(id: string): Layer;
-	removeLayer(id: string): void;
 	addTexture(image: HTMLImageElement): void;
 	present(): void;
-	draw(sprite: Sprite, offsetX: number, offsetY: number): void;
+	draw(sprite: Sprite): void;
 	drawTriangles(): void;
 }
 

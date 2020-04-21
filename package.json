@@ -1,6 +1,6 @@
 {
     "name": "dizzy-canvas",
-    "version": "0.0.5",
+    "version": "0.0.6",
     "description": "Simple 2d rendering engine.",
     "keywords": ["webgl", "gl", "rendering", "2d", "engine"],
     "main": "dist/dizzy-canvas.js",

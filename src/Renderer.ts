@@ -1,4 +1,3 @@
-import Layer from "./Layer";
 import Sprite from "./Sprite";
 
 const MAX_SPRITES = 100000;
@@ -6,7 +5,7 @@ const VERTEX_DATA_LENGTH = (4 + 4 + 3) * 4; //(x, y, tx, ty) + (a, b, c, d) + (u
 const INDEX_DATA_LENGTH = 6;
 
 export default class Renderer {
-    private readonly layers: Layer[] = [];
+    public readonly stage: Sprite = new Sprite();
     public sceneWidth: number;
     public sceneHeight: number;
     private canvas: HTMLCanvasElement;
@@ -170,36 +169,6 @@ export default class Renderer {
         return context as WebGLRenderingContext;
     }
 
-    public getLayer(id: string) {
-        let layer;
-        for (let i = 0; i < this.layers.length; i++) {
-            if (this.layers[i].id == id) {
-                layer = this.layers[i];
-            }
-        }
-
-        if (!layer) {
-            layer = new Layer(id, this.sceneWidth, this.sceneHeight);
-            this.layers.push(layer);
-        }
-
-        return layer;
-    }
-
-    public removeLayer(id: string): void {
-        let layer;
-
-        for (let i = 0; i < this.layers.length; i++) {
-            if (this.layers[i].id == id) {
-                layer = this.layers[i];
-                this.layers.splice(i, 1);
-            }
-        }
-
-        if (layer) {
-            layer.kill();
-        }
-    }
 
     public addTexture(image: HTMLImageElement): void {
         if (!image.id) {
@@ -227,28 +196,12 @@ export default class Renderer {
         if (!this.gl) {
             return;
         }
-        let i;
-        let draw = true;
 
-        for (i = 0; i < this.layers.length; i++) {
-            if (this.layers[i].redraw) {
-                draw = true;
-            }
-        }
-        if (draw) {
-            this.gl.clear(this.gl.COLOR_BUFFER_BIT);
-
-            for (i = 0; i < this.layers.length; i++) {
-                let layer = this.layers[i];
-                //this.gl.uniform4f(this.clipUniformLoc, layer.maskLeftBound, layer.maskRightBound, layer.maskTopBound, layer.maskBottomBound);
-                this.draw(layer.root, layer.maskX, layer.maskY);
-                layer.redraw = false;
-                this.drawTriangles();
-            }
-        }
+        this.draw(this.stage);
+        this.drawTriangles();
     }
 
-    public draw(sprite: Sprite, offsetX: number, offsetY: number): void {
+    public draw(sprite: Sprite): void {
         sprite.updateGlobalVisible();
 
         if (sprite.globalVisible) {
@@ -275,9 +228,7 @@ export default class Renderer {
                 let uv = sprite.mesh.uv;
                 let tr = sprite.globalTransform;
 
-                let i;
-
-                for (i = 0; i < vertexes.length; i += 2) {
+                for (let i = 0; i < vertexes.length; i += 2) {
                     this.vertexData[this.vertexOffset++] = vertexes[i];
                     this.vertexData[this.vertexOffset++] = vertexes[i + 1];
                     this.vertexData[this.vertexOffset++] = tr.x;
@@ -296,9 +247,7 @@ export default class Renderer {
             }
         }
 
-        for (let k = 0; k < sprite.childrens.length; k++) {
-            this.draw(sprite.childrens[k], offsetX, offsetY);
-        }
+        sprite.childrens.forEach(this.draw.bind(this));
     }
 
     public drawTriangles(): void {
