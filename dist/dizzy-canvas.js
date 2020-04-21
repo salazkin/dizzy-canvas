@@ -408,10 +408,6 @@ class Renderer {
         this.canvas = canvas;
         this.sceneWidth = this.canvas.width;
         this.sceneHeight = this.canvas.height;
-        this.ratio = {
-            x: 2 / this.canvas.width,
-            y: 2 / this.canvas.height
-        };
         this.vertexData = new Float32Array(MAX_SPRITES * VERTEX_DATA_LENGTH);
         this.indexData = new Uint16Array(MAX_SPRITES * INDEX_DATA_LENGTH);
         for (let i = 0; i < MAX_SPRITES; i++) {
@@ -426,7 +422,7 @@ class Renderer {
         }
         this.gl = this.createContext();
         if (this.gl) {
-            this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+            this.gl.viewport(0, 0, this.sceneWidth, this.sceneHeight);
             this.gl.clearColor(0, 0, 0, 1);
             this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
             this.gl.enable(this.gl.BLEND);
@@ -480,7 +476,7 @@ class Renderer {
                 this.gl.linkProgram(this.program);
                 this.gl.useProgram(this.program);
                 this.vec2UniformLoc = this.gl.getUniformLocation(this.program, "uRatio");
-                this.gl.uniform2f(this.vec2UniformLoc, this.ratio.x, this.ratio.y);
+                this.gl.uniform2f(this.vec2UniformLoc, 2 / this.sceneWidth, 2 / this.sceneHeight);
                 let positionLocation = this.gl.getAttribLocation(this.program, "aPos");
                 this.gl.enableVertexAttribArray(positionLocation);
                 let texCoordLocation = this.gl.getAttribLocation(this.program, "aTex");
@@ -495,6 +491,18 @@ class Renderer {
                 this.gl.vertexAttribPointer(positionLocation, 4, this.gl.FLOAT, false, VERTEX_DATA_LENGTH, 0);
                 this.gl.vertexAttribPointer(this.matABCDCoordLocation, 4, this.gl.FLOAT, false, VERTEX_DATA_LENGTH, 16);
                 this.gl.vertexAttribPointer(texCoordLocation, 3, this.gl.FLOAT, false, VERTEX_DATA_LENGTH, 32);
+            }
+        }
+    }
+    resize(width, height) {
+        if (this.sceneWidth !== width || this.sceneHeight !== height) {
+            this.sceneWidth = this.canvas.width = width;
+            this.sceneHeight = this.canvas.height = height;
+            if (this.gl) {
+                this.gl.viewport(0, 0, this.sceneWidth, this.sceneHeight);
+                if (this.vec2UniformLoc) {
+                    this.gl.uniform2f(this.vec2UniformLoc, 2 / this.sceneWidth, 2 / this.sceneHeight);
+                }
             }
         }
     }

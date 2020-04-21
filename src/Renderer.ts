@@ -21,7 +21,6 @@ export default class Renderer {
     private readonly vs: WebGLShader | null = null;
     private readonly fs: WebGLShader | null = null;
     private readonly program: WebGLProgram | null = null;
-    private readonly ratio: { x: number, y: number; };
     private readonly vec2UniformLoc: WebGLUniformLocation | null = null;
 
     private readonly matABCDCoordLocation: undefined | GLint;
@@ -34,11 +33,6 @@ export default class Renderer {
 
         this.sceneWidth = this.canvas.width;
         this.sceneHeight = this.canvas.height;
-
-        this.ratio = {
-            x: 2 / this.canvas.width,
-            y: 2 / this.canvas.height
-        };
 
         this.vertexData = new Float32Array(MAX_SPRITES * VERTEX_DATA_LENGTH);
         this.indexData = new Uint16Array(MAX_SPRITES * INDEX_DATA_LENGTH);
@@ -57,7 +51,7 @@ export default class Renderer {
         this.gl = this.createContext();
 
         if (this.gl) {
-            this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+            this.gl.viewport(0, 0, this.sceneWidth, this.sceneHeight);
             this.gl.clearColor(0, 0, 0, 1);
             this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
             this.gl.enable(this.gl.BLEND);
@@ -121,7 +115,7 @@ export default class Renderer {
                 this.gl.useProgram(this.program);
 
                 this.vec2UniformLoc = this.gl.getUniformLocation(this.program, "uRatio");
-                this.gl.uniform2f(this.vec2UniformLoc, this.ratio.x, this.ratio.y);
+                this.gl.uniform2f(this.vec2UniformLoc, 2 / this.sceneWidth, 2 / this.sceneHeight);
 
                 //this.clipUniformLoc = this.gl.getUniformLocation(this.program, "uClip");
                 //this.gl.uniform4f(this.clipUniformLoc, 0, width, height, 0);
@@ -147,7 +141,19 @@ export default class Renderer {
                 this.gl.vertexAttribPointer(texCoordLocation, 3, this.gl.FLOAT, false, VERTEX_DATA_LENGTH, 32); // 32 -> u, v, alpha -> 44
             }
         }
+    }
 
+    public resize(width: number, height: number): void {
+        if (this.sceneWidth !== width || this.sceneHeight !== height) {
+            this.sceneWidth = this.canvas.width = width;
+            this.sceneHeight = this.canvas.height = height;
+            if (this.gl) {
+                this.gl.viewport(0, 0, this.sceneWidth, this.sceneHeight);
+                if (this.vec2UniformLoc) {
+                    this.gl.uniform2f(this.vec2UniformLoc, 2 / this.sceneWidth, 2 / this.sceneHeight);
+                }
+            }
+        }
     }
 
     public createContext(): null | WebGLRenderingContext {

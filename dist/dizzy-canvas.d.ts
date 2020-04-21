@@ -130,13 +130,13 @@ export declare class Renderer {
 	private readonly vs;
 	private readonly fs;
 	private readonly program;
-	private readonly ratio;
 	private readonly vec2UniformLoc;
 	private readonly matABCDCoordLocation;
 	private readonly indexBuffer;
 	private readonly vertBuffer;
 	private currentTexture;
 	constructor(canvas: HTMLCanvasElement);
+	resize(width: number, height: number): void;
 	createContext(): null | WebGLRenderingContext;
 	getLayer(id: string): Layer;
 	removeLayer(id: string): void;
