@@ -212,21 +212,20 @@ export default class Renderer {
             }
             if (sprite.texture) {
 
-                if (this.currentTexture != sprite.texture) {
+                if (this.currentTexture !== sprite.texture.img) {
                     this.drawTriangles();
-                    this.addTexture(sprite.texture);
-                    this.currentTexture = sprite.texture;
+                    this.addTexture(sprite.texture.img!);
+                    this.currentTexture = sprite.texture.img;
                 }
 
                 if (this.indexOffset >= this.indexData.length) {
                     this.drawTriangles();
                 }
 
-                sprite.updateMesh();
-
-                let vertexes = sprite.mesh.vertexes;
-                let uv = sprite.mesh.uv;
-                let tr = sprite.globalTransform;
+                let mesh = sprite.getMesh();
+                let vertexes = mesh!.vertexes!;
+                let uv = mesh!.uv!;
+                let tr = sprite.transform.global;
 
                 for (let i = 0; i < vertexes.length; i += 2) {
                     this.vertexData[this.vertexOffset++] = vertexes[i];

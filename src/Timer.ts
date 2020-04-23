@@ -1,5 +1,5 @@
 export default class Timer {
-    private requestAnimationFrameId: number = NaN;
+    private requestAnimationFrameId!: number;
     private onEnterFrame: (delta: number) => void;
     private oldTime: number;
 

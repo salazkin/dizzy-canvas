@@ -2,14 +2,11 @@ import Transform from "./Transform";
 
 class Node {
 
-    public readonly globalTransform: Transform = new Transform();
-    public readonly localTransform: Transform = new Transform();
-
+    public transform: { local: Transform, global: Transform, globalTransformUpdated: boolean; } = { local: new Transform(), global: new Transform(), globalTransformUpdated: false };
     public readonly childrens: Node[] = [];
     protected readonly hierarchy: Node[] = [];
     public parent: Node | null = null;
     public name: string;
-    protected globalTransformUpdated: boolean = false;
 
     constructor(id?: string) {
         this.name = id || "node";
@@ -17,91 +14,91 @@ class Node {
     }
 
     set x(value: number) {
-        if (this.localTransform.x !== value) {
-            this.localTransform.x = value;
-            this.localTransform.matrixUpdated = false;
+        if (this.transform.local.x !== value) {
+            this.transform.local.x = value;
+            this.transform.local.matrixUpdated = false;
             this.poke();
         }
     }
 
     get x(): number {
-        return this.localTransform.x;
+        return this.transform.local.x;
     }
 
     set y(value: number) {
-        if (this.localTransform.y !== value) {
-            this.localTransform.y = value;
-            this.localTransform.matrixUpdated = false;
+        if (this.transform.local.y !== value) {
+            this.transform.local.y = value;
+            this.transform.local.matrixUpdated = false;
             this.poke();
         }
     }
 
     get y(): number {
-        return this.localTransform.y;
+        return this.transform.local.y;
     }
 
     set scaleX(value: number) {
-        if (this.localTransform.scaleX !== value) {
-            this.localTransform.scaleX = value;
-            this.localTransform.matrixUpdated = false;
+        if (this.transform.local.scaleX !== value) {
+            this.transform.local.scaleX = value;
+            this.transform.local.matrixUpdated = false;
             this.poke();
         }
     }
 
     get scaleX(): number {
-        return this.localTransform.scaleX;
+        return this.transform.local.scaleX;
     }
 
     set scaleY(value: number) {
-        if (this.localTransform.scaleY !== value) {
-            this.localTransform.scaleY = value;
-            this.localTransform.matrixUpdated = false;
+        if (this.transform.local.scaleY !== value) {
+            this.transform.local.scaleY = value;
+            this.transform.local.matrixUpdated = false;
             this.poke();
         }
     }
 
     get scaleY(): number {
-        return this.localTransform.scaleY;
+        return this.transform.local.scaleY;
     }
 
     set skewX(value: number) {
-        if (this.localTransform.skewX !== value) {
-            this.localTransform.rotation = 0;
-            this.localTransform.skewX = value;
-            this.localTransform.matrixUpdated = false;
+        if (this.transform.local.skewX !== value) {
+            this.transform.local.rotation = 0;
+            this.transform.local.skewX = value;
+            this.transform.local.matrixUpdated = false;
             this.poke();
         }
     }
 
     get skewX(): number {
-        return this.localTransform.skewX;
+        return this.transform.local.skewX;
     }
 
     set skewY(value: number) {
-        if (this.localTransform.skewY !== value) {
-            this.localTransform.rotation = 0;
-            this.localTransform.skewY = value;
-            this.localTransform.matrixUpdated = false;
+        if (this.transform.local.skewY !== value) {
+            this.transform.local.rotation = 0;
+            this.transform.local.skewY = value;
+            this.transform.local.matrixUpdated = false;
             this.poke();
         }
     }
 
     get skewY(): number {
-        return this.localTransform.skewY;
+        return this.transform.local.skewY;
     }
 
     set rotation(value: number) {
         let rotation = value % 360;
-        if (this.localTransform.rotation !== rotation) {
-            this.localTransform.skewX = this.localTransform.skewY = value * Math.PI / 180;
-            this.localTransform.rotation = rotation;
-            this.localTransform.matrixUpdated = false;
+        if (this.transform.local.rotation !== rotation) {
+            this.transform.local.skewX = this.transform.local.skewY = value * Math.PI / 180;
+            this.transform.local.rotation = rotation;
+            this.transform.local.matrixUpdated = false;
             this.poke();
         }
     }
 
     get rotation(): number {
-        return this.localTransform.rotation;
+        return this.transform.local.rotation;
     }
 
     public addChild(node: Node): Node {
@@ -146,14 +143,14 @@ class Node {
     }
 
     protected poke(): void {
-        this.globalTransformUpdated = false;
+        this.transform.globalTransformUpdated = false;
     }
 
     public updateHierarchyGlobalTransform(): boolean {
         let poked = false;
         for (let i = 0; i < this.hierarchy.length; i++) {
             let node = this.hierarchy[i];
-            poked = poked || !node.globalTransformUpdated;
+            poked = poked || !node.transform.globalTransformUpdated;
             node.updateGlobalTransform(poked);
         }
         return poked;
@@ -162,7 +159,7 @@ class Node {
     public updateChildrensGlobalTransform(poked?: boolean): void {
         for (let i = 0; i < this.childrens.length; i++) {
             let node = this.childrens[i];
-            poked = poked || !node.globalTransformUpdated;
+            poked = poked || !node.transform.globalTransformUpdated;
             node.updateGlobalTransform(poked);
             node.updateChildrensGlobalTransform(poked);
         }
@@ -171,7 +168,7 @@ class Node {
     public pokeChildrens(poked?: boolean) {
         for (let i = 0; i < this.childrens.length; i++) {
             let node = this.childrens[i];
-            poked = poked || !node.globalTransformUpdated;
+            poked = poked || !node.transform.globalTransformUpdated;
             if (poked) {
                 node.poke();
                 node.pokeChildrens(poked);
@@ -180,14 +177,14 @@ class Node {
     }
 
     public updateGlobalTransform(poked?: boolean): boolean {
-        poked = poked || !this.globalTransformUpdated;
+        poked = poked || !this.transform.globalTransformUpdated;
         if (poked) {
             if (this.parent) {
-                this.globalTransform.concat(this.localTransform, this.parent.globalTransform);
+                this.transform.global.concat(this.transform.local, this.parent.transform.global);
             } else {
-                this.globalTransform.copy(this.localTransform);
+                this.transform.global.copy(this.transform.local);
             }
-            this.globalTransformUpdated = true;
+            this.transform.globalTransformUpdated = true;
         }
         return poked;
     }
