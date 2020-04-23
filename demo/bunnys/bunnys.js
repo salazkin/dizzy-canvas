@@ -1,4 +1,4 @@
-import { Sprite, Renderer } from "../dist/dizzy-canvas.js";
+import { Sprite, Renderer } from "../../dist/dizzy-canvas.js";
 
 const canvas = document.createElement('canvas');
 canvas.style.position = "absolute";
@@ -20,7 +20,7 @@ let gravity = 0.5;
 let bunnysData = [];
 
 let bunnyImg = new Image();
-bunnyImg.src = "bunny.png";
+bunnyImg.src = "../assets/bunny.png";
 bunnyImg.id = "bunny";
 bunnyImg.addEventListener('load', () => {
     requestAnimationFrame(onEnterFrame);

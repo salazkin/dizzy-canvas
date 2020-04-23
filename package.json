@@ -1,6 +1,7 @@
 {
     "name": "dizzy-canvas",
-    "version": "0.0.6",
+    "author": "Alexey Salazkin",
+    "version": "0.0.7",
     "description": "Simple 2d rendering engine.",
     "keywords": ["webgl", "gl", "rendering", "2d", "engine"],
     "main": "dist/dizzy-canvas.js",
@@ -12,5 +13,6 @@
     },
     "scripts": {
         "start": "tsc && rollup -c &&  dts-bundle-generator -o dist/dizzy-canvas.d.ts src/Lib.ts"
-    }
+    },
+    "license": "MIT"
 }

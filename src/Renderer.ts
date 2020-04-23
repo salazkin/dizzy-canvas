@@ -1,11 +1,12 @@
 import Sprite from "./Sprite";
+import Node from "./Node";
 
 const MAX_SPRITES = 100000;
 const VERTEX_DATA_LENGTH = (4 + 4 + 3) * 4; //(x, y, tx, ty) + (a, b, c, d) + (u, v, alpha)
 const INDEX_DATA_LENGTH = 6;
 
 export default class Renderer {
-    public readonly stage: Sprite = new Sprite();
+    public readonly stage: Node;
     public sceneWidth: number;
     public sceneHeight: number;
     private canvas: HTMLCanvasElement;
@@ -29,6 +30,8 @@ export default class Renderer {
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
+
+        this.stage = new Node("stage");
 
         this.sceneWidth = this.canvas.width;
         this.sceneHeight = this.canvas.height;
@@ -172,10 +175,10 @@ export default class Renderer {
 
     public addTexture(image: HTMLImageElement): void {
         if (!image.id) {
-            console.log("no texture id", image);
+            console.warn("no texture id", image);
         }
         if (!this.gl) {
-            console.log("addTexture error: no web bg contex");
+            console.warn("addTexture error: no webgl contex");
             return;
         }
         if (!this.textures[image.id]) {
@@ -196,18 +199,17 @@ export default class Renderer {
         if (!this.gl) {
             return;
         }
-
-        this.draw(this.stage);
+        this.stage.updateChildrensGlobalTransform();
+        this.draw(this.stage.childrens);
         this.drawTriangles();
     }
 
-    public draw(sprite: Sprite): void {
-        sprite.updateGlobalVisible();
-
-        if (sprite.globalVisible) {
-
-            sprite.updateGlobalTransform();
-
+    public draw(childrens: Node[]): void {
+        for (let i = 0; i < childrens.length; i++) {
+            let sprite: Sprite = childrens[i] as Sprite;
+            if (!sprite.visible) {
+                continue;
+            }
             if (sprite.texture) {
 
                 if (this.currentTexture != sprite.texture) {
@@ -220,9 +222,7 @@ export default class Renderer {
                     this.drawTriangles();
                 }
 
-                if (!sprite.meshUpdated) {
-                    sprite.updateMesh();
-                }
+                sprite.updateMesh();
 
                 let vertexes = sprite.mesh.vertexes;
                 let uv = sprite.mesh.uv;
@@ -245,9 +245,8 @@ export default class Renderer {
                 }
                 this.indexOffset += INDEX_DATA_LENGTH;
             }
+            this.draw(sprite.childrens);
         }
-
-        sprite.childrens.forEach(this.draw.bind(this));
     }
 
     public drawTriangles(): void {

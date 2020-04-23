@@ -54,10 +54,10 @@ class Transform {
             this.matrixUpdated = false;
         }
         else if (global.equalSkew && global.noScale) {
-            var globalSinAngel = Math.sin(global.skewX);
-            var globalCosAngel = Math.cos(global.skewY);
-            var posX = local.x * globalCosAngel - local.y * globalSinAngel;
-            var posY = local.x * globalSinAngel + local.y * globalCosAngel;
+            let globalSinAngel = Math.sin(global.skewX);
+            let globalCosAngel = Math.cos(global.skewY);
+            let posX = local.x * globalCosAngel - local.y * globalSinAngel;
+            let posY = local.x * globalSinAngel + local.y * globalCosAngel;
             this.x = posX * global.scaleX + global.x;
             this.y = posY * global.scaleY + global.y;
             this.skewX = local.skewX + global.skewX;
@@ -69,8 +69,8 @@ class Transform {
         else {
             local.updateMatrix();
             global.updateMatrix();
-            var m1 = local.matrix;
-            var m2 = global.matrix;
+            let m1 = local.matrix;
+            let m2 = global.matrix;
             this.matrix.a = m1.a * m2.a + m1.b * m2.c;
             this.matrix.c = m1.c * m2.a + m1.d * m2.c;
             this.matrix.tx = m1.tx * m2.a + m1.ty * m2.c + m2.tx;
@@ -100,125 +100,90 @@ class Transform {
     }
 }
 
-class Sprite {
-    constructor(texture, atlas, frameId) {
-        this.name = "Sprite";
-        this.texture = null;
-        this.rect = null;
-        this.mesh = { vertexes: [], uv: [] };
-        this.meshUpdated = false;
-        this.globalVisible = false;
-        this.globalAlpha = 1;
-        this.width = 0;
-        this.height = 0;
-        this.pivotX = 0;
-        this.pivotY = 0;
-        this.visibleUpdated = false;
-        this.localVisible = true;
-        this.localAlpha = 1;
+class Node {
+    constructor(id) {
         this.globalTransform = new Transform();
         this.localTransform = new Transform();
-        this.transformUpdated = false;
-        this.parent = null;
         this.childrens = [];
         this.hierarchy = [];
-        if (texture) {
-            this.setTexture(texture, atlas, frameId);
-        }
+        this.parent = null;
+        this.globalTransformUpdated = false;
+        this.name = id || "node";
+        return this;
     }
     set x(value) {
-        this.localTransform.x = value;
-        this.pokeTransform();
+        if (this.localTransform.x !== value) {
+            this.localTransform.x = value;
+            this.localTransform.matrixUpdated = false;
+            this.poke();
+        }
     }
     get x() {
         return this.localTransform.x;
     }
     set y(value) {
-        this.localTransform.y = value;
-        this.pokeTransform();
+        if (this.localTransform.y !== value) {
+            this.localTransform.y = value;
+            this.localTransform.matrixUpdated = false;
+            this.poke();
+        }
     }
     get y() {
         return this.localTransform.y;
     }
     set scaleX(value) {
-        this.localTransform.scaleX = value;
-        this.pokeTransform();
+        if (this.localTransform.scaleX !== value) {
+            this.localTransform.scaleX = value;
+            this.localTransform.matrixUpdated = false;
+            this.poke();
+        }
     }
     get scaleX() {
         return this.localTransform.scaleX;
     }
     set scaleY(value) {
-        this.localTransform.scaleY = value;
-        this.pokeTransform();
+        if (this.localTransform.scaleY !== value) {
+            this.localTransform.scaleY = value;
+            this.localTransform.matrixUpdated = false;
+            this.poke();
+        }
     }
     get scaleY() {
         return this.localTransform.scaleY;
     }
+    set skewX(value) {
+        if (this.localTransform.skewX !== value) {
+            this.localTransform.rotation = 0;
+            this.localTransform.skewX = value;
+            this.localTransform.matrixUpdated = false;
+            this.poke();
+        }
+    }
+    get skewX() {
+        return this.localTransform.skewX;
+    }
+    set skewY(value) {
+        if (this.localTransform.skewY !== value) {
+            this.localTransform.rotation = 0;
+            this.localTransform.skewY = value;
+            this.localTransform.matrixUpdated = false;
+            this.poke();
+        }
+    }
+    get skewY() {
+        return this.localTransform.skewY;
+    }
     set rotation(value) {
-        this.localTransform.skewX = this.localTransform.skewY = value * Math.PI / 180;
-        this.localTransform.rotation = value % 360;
-        this.pokeTransform();
+        let rotation = value % 360;
+        if (this.localTransform.rotation !== rotation) {
+            this.localTransform.skewX = this.localTransform.skewY = value * Math.PI / 180;
+            this.localTransform.rotation = rotation;
+            this.localTransform.matrixUpdated = false;
+            this.poke();
+        }
     }
     get rotation() {
         return this.localTransform.rotation;
-    }
-    set alpha(value) {
-        this.localAlpha = Math.min(1, Math.max(0, value));
-        this.updateGlobalAlpha();
-    }
-    get alpha() {
-        return this.localAlpha;
-    }
-    set visible(value) {
-        this.localVisible = value;
-        this.pokeVisible();
-    }
-    get visible() {
-        return this.localVisible;
-    }
-    setTexture(texture, atlas, frameId) {
-        if (frameId && atlas && !atlas[frameId]) {
-            console.log("no sprite " + frameId + " in atlas", atlas);
-            return;
-        }
-        this.texture = texture;
-        if (atlas && frameId) {
-            this.setRect(atlas[frameId]);
-        }
-        else {
-            this.setRect([0, 0, this.texture.width, this.texture.height]);
-        }
-    }
-    setRect(rect) {
-        this.rect = rect;
-        this.width = this.rect[2];
-        this.height = this.rect[3];
-        this.meshUpdated = false;
-    }
-    updateMesh() {
-        this.mesh.vertexes = [
-            -this.width / 2, this.height / 2,
-            this.width / 2, this.height / 2,
-            this.width / 2, -this.height / 2,
-            -this.width / 2, -this.height / 2
-        ];
-        if (this.rect && this.texture) {
-            let uv0 = this.rect[0] / this.texture.width;
-            let uv1 = this.rect[1] / this.texture.height;
-            let uv2 = (this.rect[0] + this.width) / this.texture.width;
-            let uv3 = (this.rect[1] + this.height) / this.texture.height;
-            this.mesh.uv = [uv0, uv1, uv2, uv1, uv2, uv3, uv0, uv3];
-        }
-        this.meshUpdated = true;
-    }
-    pokeTransform() {
-        this.localTransform.matrixUpdated = false;
-        this.transformUpdated = false;
-        this.childrens.forEach(children => children.transformUpdated = false);
-    }
-    pokeVisible() {
-        this.visibleUpdated = false;
-        this.childrens.forEach(children => children.visibleUpdated = false);
     }
     addChild(node) {
         if (node.parent) {
@@ -226,7 +191,6 @@ class Sprite {
         }
         node.parent = this;
         node.updateHierarchy();
-        node.updateGlobalAlpha();
         this.childrens.push(node);
         return node;
     }
@@ -256,52 +220,53 @@ class Sprite {
                 break;
             }
         }
-        this.childrens.forEach(children => children.updateHierarchy());
-        this.transformUpdated = false;
+        for (let i = 0; i < this.childrens.length; i++) {
+            this.childrens[i].updateHierarchy();
+        }
+        this.poke();
     }
-    updateTransform() {
-        if (!this.transformUpdated) {
+    poke() {
+        this.globalTransformUpdated = false;
+    }
+    updateHierarchyGlobalTransform() {
+        let poked = false;
+        for (let i = 0; i < this.hierarchy.length; i++) {
+            let node = this.hierarchy[i];
+            poked = poked || !node.globalTransformUpdated;
+            node.updateGlobalTransform(poked);
+        }
+        return poked;
+    }
+    updateChildrensGlobalTransform(poked) {
+        for (let i = 0; i < this.childrens.length; i++) {
+            let node = this.childrens[i];
+            poked = poked || !node.globalTransformUpdated;
+            node.updateGlobalTransform(poked);
+            node.updateChildrensGlobalTransform(poked);
+        }
+    }
+    pokeChildrens(poked) {
+        for (let i = 0; i < this.childrens.length; i++) {
+            let node = this.childrens[i];
+            poked = poked || !node.globalTransformUpdated;
+            if (poked) {
+                node.poke();
+                node.pokeChildrens(poked);
+            }
+        }
+    }
+    updateGlobalTransform(poked) {
+        poked = poked || !this.globalTransformUpdated;
+        if (poked) {
             if (this.parent) {
                 this.globalTransform.concat(this.localTransform, this.parent.globalTransform);
             }
             else {
                 this.globalTransform.copy(this.localTransform);
             }
-            this.transformUpdated = true;
+            this.globalTransformUpdated = true;
         }
-    }
-    updateGlobalTransform() {
-        if (!this.transformUpdated) {
-            this.hierarchy.forEach(children => children.updateTransform());
-            this.updateTransform();
-        }
-    }
-    ;
-    updateVisible() {
-        if (!this.visibleUpdated) {
-            if (this.parent && this.parent.globalVisible === false) {
-                this.globalVisible = false;
-            }
-            else {
-                this.globalVisible = this.localVisible;
-            }
-            this.visibleUpdated = true;
-        }
-    }
-    updateGlobalVisible() {
-        if (!this.visibleUpdated) {
-            this.hierarchy.forEach(children => children.updateVisible());
-            this.updateVisible();
-        }
-    }
-    updateGlobalAlpha() {
-        if (this.parent) {
-            this.globalAlpha = this.localAlpha * this.parent.globalAlpha;
-        }
-        else {
-            this.globalAlpha = this.localAlpha;
-        }
-        this.childrens.forEach(children => children.updateGlobalAlpha());
+        return poked;
     }
     kill() {
         this.childrens.forEach(children => children.parent = null);
@@ -314,12 +279,127 @@ class Sprite {
     }
 }
 
+class Sprite extends Node {
+    constructor(texture, atlas, frameId) {
+        super("sprite");
+        this.texture = null;
+        this.rect = null;
+        this.bounds = null;
+        this.boundsUpdated = false;
+        this.mesh = { vertexes: [], uv: [] };
+        this.meshUpdated = false;
+        this.localVisible = true;
+        this.localAlpha = 1;
+        if (texture) {
+            this.setTexture(texture, atlas, frameId);
+        }
+    }
+    set width(value) {
+        if (this.rect) {
+            this.scaleX = value / this.rect.width;
+        }
+    }
+    get width() {
+        return this.rect ? this.rect.width * this.scaleX : 0;
+    }
+    set height(value) {
+        if (this.rect) {
+            this.scaleY = value / this.rect.height;
+        }
+    }
+    get height() {
+        return this.rect ? this.rect.height * this.scaleY : 0;
+    }
+    set alpha(value) {
+        this.localAlpha = Math.min(1, Math.max(0, value));
+    }
+    get alpha() {
+        return this.localAlpha;
+    }
+    set visible(value) {
+        this.localVisible = value;
+    }
+    get visible() {
+        return this.localVisible;
+    }
+    setTexture(texture, atlas, frameId) {
+        if (frameId && atlas && !atlas[frameId]) {
+            console.warn("no sprite " + frameId + " in atlas", atlas);
+            return;
+        }
+        this.texture = texture;
+        if (atlas && frameId) {
+            this.setRect(atlas[frameId]);
+        }
+        else {
+            this.setRect({ x: 0, y: 0, width: this.texture.width, height: this.texture.height });
+        }
+    }
+    setRect(rect) {
+        this.rect = rect;
+        this.meshUpdated = false;
+        this.boundsUpdated = false;
+    }
+    updateMesh() {
+        if (!this.meshUpdated) {
+            if (this.rect && this.texture) {
+                this.mesh.vertexes = [0, 0, this.rect.width, 0, this.rect.width, -this.rect.height, 0, -this.rect.height];
+                let uv0 = this.rect.x / this.texture.width;
+                let uv1 = this.rect.y / this.texture.height;
+                let uv2 = (this.rect.x + this.rect.width) / this.texture.width;
+                let uv3 = (this.rect.y + this.rect.height) / this.texture.height;
+                this.mesh.uv = [uv0, uv1, uv2, uv1, uv2, uv3, uv0, uv3];
+            }
+            this.meshUpdated = true;
+        }
+    }
+    updateBounds() {
+        if (!this.visible || this.boundsUpdated) {
+            return;
+        }
+        if (this.rect) {
+            if (!this.bounds) {
+                this.bounds = { x: 0, y: 0, width: 0, height: 0 };
+            }
+            let w = this.width;
+            let h = this.height;
+            let vec1X = Math.cos(this.globalTransform.skewX) * w;
+            let vec1Y = Math.sin(this.globalTransform.skewX) * w;
+            let vec2X = Math.cos(this.globalTransform.skewY + Math.PI * 0.5) * h;
+            let vec2Y = Math.sin(this.globalTransform.skewY + Math.PI * 0.5) * h;
+            let vec3X = vec1X + vec2X;
+            let vec3Y = vec1Y + vec2Y;
+            let minX = Math.min(0, Math.min(vec1X, Math.min(vec2X, vec3X)));
+            let minY = Math.min(0, Math.min(vec1Y, Math.min(vec2Y, vec3Y)));
+            let maxX = Math.max(0, Math.max(vec1X, Math.max(vec2X, vec3X)));
+            let maxY = Math.max(0, Math.max(vec1Y, Math.max(vec2Y, vec3Y)));
+            this.bounds.x = this.globalTransform.x + minX;
+            this.bounds.y = this.globalTransform.y + minY;
+            this.bounds.width = maxX - minX;
+            this.bounds.height = maxY - minY;
+        }
+        this.boundsUpdated = true;
+    }
+    updateGlobalTransform(poked) {
+        if (poked) {
+            this.boundsUpdated = false;
+        }
+        return super.updateGlobalTransform(poked);
+    }
+    getBounds() {
+        let poked = this.updateHierarchyGlobalTransform();
+        poked = this.updateGlobalTransform(poked);
+        this.pokeChildrens(poked);
+        this.updateBounds();
+        return this.bounds;
+    }
+}
+
 const MAX_SPRITES = 100000;
 const VERTEX_DATA_LENGTH = (4 + 4 + 3) * 4;
 const INDEX_DATA_LENGTH = 6;
 class Renderer {
     constructor(canvas) {
-        this.stage = new Sprite();
         this.vertexOffset = 0;
         this.indexOffset = 0;
         this.textures = {};
@@ -330,6 +410,7 @@ class Renderer {
         this.indexBuffer = null;
         this.vertBuffer = null;
         this.canvas = canvas;
+        this.stage = new Node("stage");
         this.sceneWidth = this.canvas.width;
         this.sceneHeight = this.canvas.height;
         this.vertexData = new Float32Array(MAX_SPRITES * VERTEX_DATA_LENGTH);
@@ -445,10 +526,10 @@ class Renderer {
     }
     addTexture(image) {
         if (!image.id) {
-            console.log("no texture id", image);
+            console.warn("no texture id", image);
         }
         if (!this.gl) {
-            console.log("addTexture error: no web bg contex");
+            console.warn("addTexture error: no webgl contex");
             return;
         }
         if (!this.textures[image.id]) {
@@ -469,13 +550,16 @@ class Renderer {
         if (!this.gl) {
             return;
         }
-        this.draw(this.stage);
+        this.stage.updateChildrensGlobalTransform();
+        this.draw(this.stage.childrens);
         this.drawTriangles();
     }
-    draw(sprite) {
-        sprite.updateGlobalVisible();
-        if (sprite.globalVisible) {
-            sprite.updateGlobalTransform();
+    draw(childrens) {
+        for (let i = 0; i < childrens.length; i++) {
+            let sprite = childrens[i];
+            if (!sprite.visible) {
+                continue;
+            }
             if (sprite.texture) {
                 if (this.currentTexture != sprite.texture) {
                     this.drawTriangles();
@@ -485,9 +569,7 @@ class Renderer {
                 if (this.indexOffset >= this.indexData.length) {
                     this.drawTriangles();
                 }
-                if (!sprite.meshUpdated) {
-                    sprite.updateMesh();
-                }
+                sprite.updateMesh();
                 let vertexes = sprite.mesh.vertexes;
                 let uv = sprite.mesh.uv;
                 let tr = sprite.globalTransform;
@@ -506,8 +588,8 @@ class Renderer {
                 }
                 this.indexOffset += INDEX_DATA_LENGTH;
             }
+            this.draw(sprite.childrens);
         }
-        sprite.childrens.forEach(this.draw.bind(this));
     }
     drawTriangles() {
         if (!this.gl) {
@@ -522,4 +604,4 @@ class Renderer {
     }
 }
 
-export { Renderer, Sprite, Transform };
+export { Node, Renderer, Sprite, Transform };

@@ -1,92 +1,48 @@
-import Transform from "./Transform";
+import Node from "./Node";
+import { Rect, Atlas } from "Types";
 
-type Atlas = { [key: string]: number[]; };
-
-export default class Sprite {
-
-    public name = "Sprite";
+export default class Sprite extends Node {
 
     public texture: HTMLImageElement | null = null;
-    protected rect: number[] | null = null;
+    protected rect: Rect | null = null;
+    protected bounds: Rect | null = null;
+    protected boundsUpdated: boolean = false;
+
     public readonly mesh: { vertexes: number[], uv: number[]; } = { vertexes: [], uv: [] };
-    public meshUpdated: boolean = false;
+    protected meshUpdated: boolean = false;
 
-    public globalVisible: boolean = false;
-    public globalAlpha: number = 1;
-
-    protected width: number = 0;
-    protected height: number = 0;
-
-    protected pivotX: number = 0;
-    protected pivotY: number = 0;
-
-    protected visibleUpdated: boolean = false;
     protected localVisible: boolean = true;
     protected localAlpha = 1;
 
-    public readonly globalTransform = new Transform();
-    protected readonly localTransform = new Transform();
-    protected transformUpdated: boolean = false;
-
-    public parent: Sprite | null = null;
-    public readonly childrens: Sprite[] = [];
-    protected readonly hierarchy: Sprite[] = [];
-
     constructor(texture?: HTMLImageElement, atlas?: Atlas, frameId?: string) {
+        super("sprite");
         if (texture) {
             this.setTexture(texture, atlas, frameId);
         }
     }
 
-    set x(value: number) {
-        this.localTransform.x = value;
-        this.pokeTransform();
+    set width(value: number) {
+        if (this.rect) {
+            this.scaleX = value / this.rect.width;
+        }
     }
 
-    get x(): number {
-        return this.localTransform.x;
+    get width(): number {
+        return this.rect ? this.rect.width * this.scaleX : 0;
     }
 
-    set y(value: number) {
-        this.localTransform.y = value;
-        this.pokeTransform();
+    set height(value: number) {
+        if (this.rect) {
+            this.scaleY = value / this.rect.height;
+        }
     }
 
-    get y(): number {
-        return this.localTransform.y;
-    }
-
-    set scaleX(value: number) {
-        this.localTransform.scaleX = value;
-        this.pokeTransform();
-    }
-
-    get scaleX(): number {
-        return this.localTransform.scaleX;
-    }
-
-    set scaleY(value: number) {
-        this.localTransform.scaleY = value;
-        this.pokeTransform();
-    }
-
-    get scaleY(): number {
-        return this.localTransform.scaleY;
-    }
-
-    set rotation(value: number) {
-        this.localTransform.skewX = this.localTransform.skewY = value * Math.PI / 180;
-        this.localTransform.rotation = value % 360;
-        this.pokeTransform();
-    }
-
-    get rotation(): number {
-        return this.localTransform.rotation;
+    get height(): number {
+        return this.rect ? this.rect.height * this.scaleY : 0;
     }
 
     set alpha(value: number) {
         this.localAlpha = Math.min(1, Math.max(0, value));
-        this.updateGlobalAlpha();
     }
 
     get alpha(): number {
@@ -95,7 +51,6 @@ export default class Sprite {
 
     set visible(value: boolean) {
         this.localVisible = value;
-        this.pokeVisible();
     }
 
     get visible(): boolean {
@@ -104,7 +59,7 @@ export default class Sprite {
 
     public setTexture(texture: HTMLImageElement, atlas?: Atlas, frameId?: string): void {
         if (frameId && atlas && !atlas[frameId]) {
-            console.log("no sprite " + frameId + " in atlas", atlas);
+            console.warn("no sprite " + frameId + " in atlas", atlas);
             return;
         }
 
@@ -112,143 +67,78 @@ export default class Sprite {
         if (atlas && frameId) {
             this.setRect(atlas[frameId]);
         } else {
-            this.setRect([0, 0, this.texture.width, this.texture.height]);
+            this.setRect({ x: 0, y: 0, width: this.texture.width, height: this.texture.height });
         }
     }
 
-    public setRect(rect: number[]): void {
+    public setRect(rect: Rect): void {
         this.rect = rect;
-        this.width = this.rect[2];
-        this.height = this.rect[3];
         this.meshUpdated = false;
+        this.boundsUpdated = false;
     }
 
     public updateMesh(): void {
-        this.mesh.vertexes = [
-            -this.width / 2, this.height / 2,
-            this.width / 2, this.height / 2,
-            this.width / 2, -this.height / 2,
-            -this.width / 2, -this.height / 2
-        ];
+        if (!this.meshUpdated) {
+            if (this.rect && this.texture) {
+                this.mesh.vertexes = [0, 0, this.rect.width, 0, this.rect.width, -this.rect.height, 0, -this.rect.height];
 
-        //this.mesh.vertexes = [0, 0, this.width, 0, this.width, -this.height, 0, -this.height];
-
-        if (this.rect && this.texture) {
-            let uv0 = this.rect[0] / this.texture.width;
-            let uv1 = this.rect[1] / this.texture.height;
-            let uv2 = (this.rect[0] + this.width) / this.texture.width;
-            let uv3 = (this.rect[1] + this.height) / this.texture.height;
-            this.mesh.uv = [uv0, uv1, uv2, uv1, uv2, uv3, uv0, uv3];
-        }
-
-        this.meshUpdated = true;
-    }
-
-    public pokeTransform(): void {
-        this.localTransform.matrixUpdated = false;
-        this.transformUpdated = false;
-        this.childrens.forEach(children => children.transformUpdated = false);
-    }
-
-    public pokeVisible(): void {
-        this.visibleUpdated = false;
-        this.childrens.forEach(children => children.visibleUpdated = false);
-    }
-
-    public addChild(node: Sprite): Sprite {
-        if (node.parent) {
-            node.parent.removeChild(node);
-        }
-        node.parent = this;
-
-        node.updateHierarchy();
-        node.updateGlobalAlpha();
-        this.childrens.push(node);
-
-        return node;
-    }
-
-    public removeChild(node: Sprite): void {
-        for (let i = 0; i < this.childrens.length; i++) {
-            if (this.childrens[i] === node) {
-                this.childrens.splice(i, 1);
+                let uv0 = this.rect.x / this.texture.width;
+                let uv1 = this.rect.y / this.texture.height;
+                let uv2 = (this.rect.x + this.rect.width) / this.texture.width;
+                let uv3 = (this.rect.y + this.rect.height) / this.texture.height;
+                this.mesh.uv = [uv0, uv1, uv2, uv1, uv2, uv3, uv0, uv3];
             }
-        }
-        if (this.parent) {
-            this.parent.removeChild(node);
-        } else {
-            node.parent = null;
-            node.updateHierarchy();
+            this.meshUpdated = true;
         }
     }
 
-    public updateHierarchy(): void {
-        this.hierarchy.length = 0;
-        let node = this as Sprite;
-        while (true) {
-            if (node.parent) {
-                node = node.parent;
-                this.hierarchy.unshift(node);
-            } else {
-                break;
+    public updateBounds(): void {
+        if (!this.visible || this.boundsUpdated) {
+            return;
+        }
+
+        if (this.rect) {
+            if (!this.bounds) {
+                this.bounds = { x: 0, y: 0, width: 0, height: 0 };
             }
+
+            let w = this.width;
+            let h = this.height;
+
+            let vec1X = Math.cos(this.globalTransform.skewX) * w;
+            let vec1Y = Math.sin(this.globalTransform.skewX) * w;
+            let vec2X = Math.cos(this.globalTransform.skewY + Math.PI * 0.5) * h; //todo optimize
+            let vec2Y = Math.sin(this.globalTransform.skewY + Math.PI * 0.5) * h;
+            let vec3X = vec1X + vec2X;
+            let vec3Y = vec1Y + vec2Y;
+
+            let minX = Math.min(0, Math.min(vec1X, Math.min(vec2X, vec3X)));
+            let minY = Math.min(0, Math.min(vec1Y, Math.min(vec2Y, vec3Y)));
+            let maxX = Math.max(0, Math.max(vec1X, Math.max(vec2X, vec3X)));
+            let maxY = Math.max(0, Math.max(vec1Y, Math.max(vec2Y, vec3Y)));
+
+            this.bounds.x = this.globalTransform.x + minX;
+            this.bounds.y = this.globalTransform.y + minY;
+            this.bounds.width = maxX - minX;
+            this.bounds.height = maxY - minY;
         }
-        this.childrens.forEach(children => children.updateHierarchy());
-        this.transformUpdated = false;
+
+        this.boundsUpdated = true;
     }
 
-    public updateTransform(): void {
-        if (!this.transformUpdated) {
-            if (this.parent) {
-                this.globalTransform.concat(this.localTransform, this.parent.globalTransform);
-            } else {
-                this.globalTransform.copy(this.localTransform);
-            }
-            this.transformUpdated = true;
+    public updateGlobalTransform(poked?: boolean): boolean {
+        if (poked) {
+            this.boundsUpdated = false;
         }
+        return super.updateGlobalTransform(poked);
     }
 
-    public updateGlobalTransform(): void {
-        if (!this.transformUpdated) {
-            this.hierarchy.forEach(children => children.updateTransform());
-            this.updateTransform();
-        }
-    };
-
-    public updateVisible(): void {
-        if (!this.visibleUpdated) {
-            if (this.parent && this.parent.globalVisible === false) {
-                this.globalVisible = false;
-            } else {
-                this.globalVisible = this.localVisible;
-            }
-            this.visibleUpdated = true;
-        }
+    public getBounds(): Rect | null {
+        let poked = this.updateHierarchyGlobalTransform();
+        poked = this.updateGlobalTransform(poked);
+        this.pokeChildrens(poked);
+        this.updateBounds();
+        return this.bounds;
     }
 
-    public updateGlobalVisible(): void {
-        if (!this.visibleUpdated) {
-            this.hierarchy.forEach(children => children.updateVisible());
-            this.updateVisible();
-        }
-    }
-
-    public updateGlobalAlpha(): void {
-        if (this.parent) {
-            this.globalAlpha = this.localAlpha * this.parent.globalAlpha;
-        } else {
-            this.globalAlpha = this.localAlpha;
-        }
-        this.childrens.forEach(children => children.updateGlobalAlpha());
-    }
-
-    public kill(): void {
-        this.childrens.forEach(children => children.parent = null);
-        this.childrens.length = 0;
-        this.hierarchy.length = 0;
-        if (this.parent) {
-            this.parent.removeChild(this);
-        }
-        this.parent = null;
-    }
 }

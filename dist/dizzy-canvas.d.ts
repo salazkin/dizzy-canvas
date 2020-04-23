@@ -27,34 +27,15 @@ export declare class Transform {
 	concat(local: Transform, global: Transform): void;
 	copy(target: Transform): void;
 }
-export declare type Atlas = {
-	[key: string]: number[];
-};
-export declare class Sprite {
-	name: string;
-	texture: HTMLImageElement | null;
-	protected rect: number[] | null;
-	readonly mesh: {
-		vertexes: number[];
-		uv: number[];
-	};
-	meshUpdated: boolean;
-	globalVisible: boolean;
-	globalAlpha: number;
-	protected width: number;
-	protected height: number;
-	protected pivotX: number;
-	protected pivotY: number;
-	protected visibleUpdated: boolean;
-	protected localVisible: boolean;
-	protected localAlpha: number;
+export declare class Node {
 	readonly globalTransform: Transform;
-	protected readonly localTransform: Transform;
-	protected transformUpdated: boolean;
-	parent: Sprite | null;
-	readonly childrens: Sprite[];
-	protected readonly hierarchy: Sprite[];
-	constructor(texture?: HTMLImageElement, atlas?: Atlas, frameId?: string);
+	readonly localTransform: Transform;
+	readonly childrens: Node[];
+	protected readonly hierarchy: Node[];
+	parent: Node | null;
+	name: string;
+	protected globalTransformUpdated: boolean;
+	constructor(id?: string);
 	set x(value: number);
 	get x(): number;
 	set y(value: number);
@@ -63,29 +44,61 @@ export declare class Sprite {
 	get scaleX(): number;
 	set scaleY(value: number);
 	get scaleY(): number;
+	set skewX(value: number);
+	get skewX(): number;
+	set skewY(value: number);
+	get skewY(): number;
 	set rotation(value: number);
 	get rotation(): number;
+	addChild(node: Node): Node;
+	removeChild(node: Node): void;
+	updateHierarchy(): void;
+	protected poke(): void;
+	updateHierarchyGlobalTransform(): boolean;
+	updateChildrensGlobalTransform(poked?: boolean): void;
+	pokeChildrens(poked?: boolean): void;
+	updateGlobalTransform(poked?: boolean): boolean;
+	kill(): void;
+}
+export declare type Atlas = {
+	[key: string]: Rect;
+};
+export declare type Rect = {
+	x: number;
+	y: number;
+	width: number;
+	height: number;
+};
+export declare class Sprite extends Node {
+	texture: HTMLImageElement | null;
+	protected rect: Rect | null;
+	protected bounds: Rect | null;
+	protected boundsUpdated: boolean;
+	readonly mesh: {
+		vertexes: number[];
+		uv: number[];
+	};
+	protected meshUpdated: boolean;
+	protected localVisible: boolean;
+	protected localAlpha: number;
+	constructor(texture?: HTMLImageElement, atlas?: Atlas, frameId?: string);
+	set width(value: number);
+	get width(): number;
+	set height(value: number);
+	get height(): number;
 	set alpha(value: number);
 	get alpha(): number;
 	set visible(value: boolean);
 	get visible(): boolean;
 	setTexture(texture: HTMLImageElement, atlas?: Atlas, frameId?: string): void;
-	setRect(rect: number[]): void;
+	setRect(rect: Rect): void;
 	updateMesh(): void;
-	pokeTransform(): void;
-	pokeVisible(): void;
-	addChild(node: Sprite): Sprite;
-	removeChild(node: Sprite): void;
-	updateHierarchy(): void;
-	updateTransform(): void;
-	updateGlobalTransform(): void;
-	updateVisible(): void;
-	updateGlobalVisible(): void;
-	updateGlobalAlpha(): void;
-	kill(): void;
+	updateBounds(): void;
+	updateGlobalTransform(poked?: boolean): boolean;
+	getBounds(): Rect | null;
 }
 export declare class Renderer {
-	readonly stage: Sprite;
+	readonly stage: Node;
 	sceneWidth: number;
 	sceneHeight: number;
 	private canvas;
@@ -110,7 +123,7 @@ export declare class Renderer {
 	createContext(): null | WebGLRenderingContext;
 	addTexture(image: HTMLImageElement): void;
 	present(): void;
-	draw(sprite: Sprite): void;
+	draw(childrens: Node[]): void;
 	drawTriangles(): void;
 }
 
