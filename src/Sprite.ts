@@ -1,21 +1,19 @@
 import Node from "./Node";
-import { Rect, Atlas, Point } from "Types";
+import { Rect, Point } from "Types";
 
 export default class Sprite extends Node {
 
-    public texture: { img?: HTMLImageElement, rect?: Rect; } | null = null;
+    protected texture: { img?: HTMLImageElement, rect?: Rect; } | null = null;
     protected bounds: { rect?: Rect, boundsUpdated?: boolean; } | null = null;
     protected anchor: Point = { x: 0, y: 0 };
     protected mesh: { vertexes?: number[], uv?: number[], meshUpdated: boolean; } | null = null;
     protected display: { visible: boolean, alpha: number, blend?: string; } = { visible: true, alpha: 1 };
 
-    constructor(texture?: HTMLImageElement, atlas?: Atlas, frameId?: string) {
+    constructor(texture?: HTMLImageElement, frame?: Rect) {
         super("sprite");
         if (texture) {
-            this.setTexture(texture, atlas, frameId);
+            this.setTexture(texture, frame);
         }
-
-        console.log(this);
     }
 
     set width(value: number) {
@@ -54,22 +52,42 @@ export default class Sprite extends Node {
         return this.display.alpha;
     }
 
-    public setTexture(img: HTMLImageElement, atlas?: Atlas, frameId?: string): void {
-        if (frameId && atlas && !atlas[frameId]) {
-            console.warn("no sprite " + frameId + " in atlas", atlas);
-            return;
+    set anchorX(value: number) {
+        this.anchor.x = Math.min(1, Math.max(0, value));
+        if (this.mesh) {
+            this.mesh.meshUpdated = false;
         }
+    }
 
+    get anchorX(): number {
+        return this.anchor.x;
+    }
+
+    set anchorY(value: number) {
+        this.anchor.y = Math.min(1, Math.max(0, value));
+        if (this.mesh) {
+            this.mesh.meshUpdated = false;
+        }
+    }
+
+    get anchorY(): number {
+        return this.anchor.y;
+    }
+
+    public setTexture(img: HTMLImageElement, frame?: Rect): void {
         if (!this.texture) {
             this.texture = {};
         }
-
         this.texture.img = img;
-        if (atlas && frameId) {
-            this.setFrame(atlas[frameId]);
+        if (frame) {
+            this.setFrame(frame);
         } else {
             this.setFrame({ x: 0, y: 0, width: img.width, height: img.height });
         }
+    }
+
+    public getTexture(): HTMLImageElement | null {
+        return this.texture ? this.texture.img! : null;
     }
 
     public setFrame(rect: Rect): void {
@@ -86,11 +104,8 @@ export default class Sprite extends Node {
     }
 
     public setAnchor(x: number = 0, y: number = 0): void {
-        this.anchor.x = Math.min(1, Math.max(0, x));
-        this.anchor.y = Math.min(1, Math.max(0, y));;
-        if (this.mesh) {
-            this.mesh.meshUpdated = false;
-        }
+        this.anchorX = x;
+        this.anchorY = y;
     }
 
     public getMesh(): { vertexes?: number[], uv?: number[], meshUpdated: boolean; } | null {
@@ -159,8 +174,6 @@ export default class Sprite extends Node {
 
             this.bounds.boundsUpdated = true;
         }
-
-
     }
 
     public getBounds(): Rect | null {
@@ -173,7 +186,8 @@ export default class Sprite extends Node {
         }
 
         this.updateBounds();
-        return this.bounds!.rect!;
+        return this.bounds ? this.bounds.rect! : null;
     }
+
 
 }

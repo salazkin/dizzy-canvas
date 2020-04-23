@@ -210,12 +210,14 @@ export default class Renderer {
             if (!sprite.visible) {
                 continue;
             }
-            if (sprite.texture) {
 
-                if (this.currentTexture !== sprite.texture.img) {
+            let texture = sprite.getTexture();
+            if (texture) {
+
+                if (this.currentTexture !== texture) {
                     this.drawTriangles();
-                    this.addTexture(sprite.texture.img!);
-                    this.currentTexture = sprite.texture.img;
+                    this.addTexture(texture);
+                    this.currentTexture = texture;
                 }
 
                 if (this.indexOffset >= this.indexData.length) {

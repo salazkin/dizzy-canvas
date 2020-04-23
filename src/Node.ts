@@ -2,7 +2,11 @@ import Transform from "./Transform";
 
 class Node {
 
-    public transform: { local: Transform, global: Transform, globalTransformUpdated: boolean; } = { local: new Transform(), global: new Transform(), globalTransformUpdated: false };
+    public transform: {
+        local: Transform,
+        global: Transform,
+        globalTransformUpdated: boolean;
+    } = { local: new Transform(), global: new Transform(), globalTransformUpdated: false };
     public readonly childrens: Node[] = [];
     protected readonly hierarchy: Node[] = [];
     public parent: Node | null = null;
@@ -63,7 +67,7 @@ class Node {
 
     set skewX(value: number) {
         if (this.transform.local.skewX !== value) {
-            this.transform.local.rotation = 0;
+            this.transform.local.rotation = this.transform.local.skewY === this.transform.local.skewX ? this.transform.local.skewX : 0;
             this.transform.local.skewX = value;
             this.transform.local.matrixUpdated = false;
             this.poke();
@@ -76,7 +80,7 @@ class Node {
 
     set skewY(value: number) {
         if (this.transform.local.skewY !== value) {
-            this.transform.local.rotation = 0;
+            this.transform.local.rotation = this.transform.local.skewY === this.transform.local.skewX ? this.transform.local.skewX : 0;
             this.transform.local.skewY = value;
             this.transform.local.matrixUpdated = false;
             this.poke();
@@ -99,6 +103,21 @@ class Node {
 
     get rotation(): number {
         return this.transform.local.rotation;
+    }
+
+    public setPosition(x: number = 0, y: number = 0): void {
+        this.x = x;
+        this.y = y;
+    }
+
+    public setScale(x: number = 1, y: number = 1): void {
+        this.scaleX = x;
+        this.scaleY = y;
+    }
+
+    public setSkew(x: number = 0, y: number = 0): void {
+        this.skewX = x;
+        this.skewY = y;
     }
 
     public addChild(node: Node): Node {
@@ -165,7 +184,7 @@ class Node {
         }
     }
 
-    public pokeChildrens(poked?: boolean) {
+    public pokeChildrens(poked?: boolean): void {
         for (let i = 0; i < this.childrens.length; i++) {
             let node = this.childrens[i];
             poked = poked || !node.transform.globalTransformUpdated;
