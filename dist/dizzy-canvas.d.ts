@@ -28,13 +28,15 @@ export declare class Transform {
 	copy(target: Transform): void;
 }
 export declare class Node {
-	readonly globalTransform: Transform;
-	readonly localTransform: Transform;
+	transform: {
+		local: Transform;
+		global: Transform;
+		globalTransformUpdated: boolean;
+	};
 	readonly childrens: Node[];
 	protected readonly hierarchy: Node[];
 	parent: Node | null;
 	name: string;
-	protected globalTransformUpdated: boolean;
 	constructor(id?: string);
 	set x(value: number);
 	get x(): number;
@@ -50,6 +52,9 @@ export declare class Node {
 	get skewY(): number;
 	set rotation(value: number);
 	get rotation(): number;
+	setPosition(x?: number, y?: number): void;
+	setScale(x?: number, y?: number): void;
+	setSkew(x?: number, y?: number): void;
 	addChild(node: Node): Node;
 	removeChild(node: Node): void;
 	updateHierarchy(): void;
@@ -60,41 +65,60 @@ export declare class Node {
 	updateGlobalTransform(poked?: boolean): boolean;
 	kill(): void;
 }
-export declare type Atlas = {
-	[key: string]: Rect;
-};
 export declare type Rect = {
 	x: number;
 	y: number;
 	width: number;
 	height: number;
 };
+export declare type Point = {
+	x: number;
+	y: number;
+};
 export declare class Sprite extends Node {
-	texture: HTMLImageElement | null;
-	protected rect: Rect | null;
-	protected bounds: Rect | null;
-	protected boundsUpdated: boolean;
-	readonly mesh: {
-		vertexes: number[];
-		uv: number[];
+	protected texture: {
+		img?: HTMLImageElement;
+		rect?: Rect;
+	} | null;
+	protected bounds: {
+		rect?: Rect;
+		boundsUpdated?: boolean;
+	} | null;
+	protected anchor: Point;
+	protected mesh: {
+		vertexes?: number[];
+		uv?: number[];
+		meshUpdated: boolean;
+	} | null;
+	protected display: {
+		visible: boolean;
+		alpha: number;
+		blend?: string;
 	};
-	protected meshUpdated: boolean;
-	protected localVisible: boolean;
-	protected localAlpha: number;
-	constructor(texture?: HTMLImageElement, atlas?: Atlas, frameId?: string);
+	constructor(texture?: HTMLImageElement, frame?: Rect);
 	set width(value: number);
 	get width(): number;
 	set height(value: number);
 	get height(): number;
-	set alpha(value: number);
-	get alpha(): number;
 	set visible(value: boolean);
 	get visible(): boolean;
-	setTexture(texture: HTMLImageElement, atlas?: Atlas, frameId?: string): void;
-	setRect(rect: Rect): void;
+	set alpha(value: number);
+	get alpha(): number;
+	set anchorX(value: number);
+	get anchorX(): number;
+	set anchorY(value: number);
+	get anchorY(): number;
+	setTexture(img: HTMLImageElement, frame?: Rect): void;
+	getTexture(): HTMLImageElement | null;
+	setFrame(rect: Rect): void;
+	setAnchor(x?: number, y?: number): void;
+	getMesh(): {
+		vertexes?: number[];
+		uv?: number[];
+		meshUpdated: boolean;
+	} | null;
 	updateMesh(): void;
 	updateBounds(): void;
-	updateGlobalTransform(poked?: boolean): boolean;
 	getBounds(): Rect | null;
 }
 export declare class Renderer {
@@ -125,6 +149,15 @@ export declare class Renderer {
 	present(): void;
 	draw(childrens: Node[]): void;
 	drawTriangles(): void;
+}
+export declare class Timer {
+	private requestAnimationFrameId;
+	private onEnterFrame;
+	private oldTime;
+	constructor(cb: (delta: number) => void);
+	start(): void;
+	stop(): void;
+	private onRequestAnimationFrame;
 }
 
 export {};
