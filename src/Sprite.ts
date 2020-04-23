@@ -1,5 +1,5 @@
 import Node from "./Node";
-import { Rect, Atlas } from "Types";
+import { Rect, Atlas, Point } from "Types";
 
 export default class Sprite extends Node {
 
@@ -7,10 +7,9 @@ export default class Sprite extends Node {
     protected rect: Rect | null = null;
     protected bounds: Rect | null = null;
     protected boundsUpdated: boolean = false;
-
+    protected anchor: Point = { x: 0, y: 0 };
     public readonly mesh: { vertexes: number[], uv: number[]; } = { vertexes: [], uv: [] };
     protected meshUpdated: boolean = false;
-
     protected localVisible: boolean = true;
     protected localAlpha = 1;
 
@@ -77,10 +76,24 @@ export default class Sprite extends Node {
         this.boundsUpdated = false;
     }
 
+    public setAnchor(x: number = 0, y: number = 0): void {
+        this.anchor.x = Math.min(1, Math.max(0, x));
+        this.anchor.y = Math.min(1, Math.max(0, y));;
+        this.meshUpdated = false;
+    }
+
     public updateMesh(): void {
         if (!this.meshUpdated) {
             if (this.rect && this.texture) {
-                this.mesh.vertexes = [0, 0, this.rect.width, 0, this.rect.width, -this.rect.height, 0, -this.rect.height];
+                let offsetX = this.rect.width * this.anchor.x;
+                let offsetY = this.rect.height * this.anchor.y;
+
+                this.mesh.vertexes = [
+                    -offsetX, offsetY,
+                    this.rect.width - offsetX, offsetY,
+                    this.rect.width - offsetX, -this.rect.height + offsetY,
+                    -offsetX, -this.rect.height + offsetY
+                ];
 
                 let uv0 = this.rect.x / this.texture.width;
                 let uv1 = this.rect.y / this.texture.height;
@@ -105,10 +118,10 @@ export default class Sprite extends Node {
             let w = this.width;
             let h = this.height;
 
-            let vec1X = Math.cos(this.globalTransform.skewX) * w;
-            let vec1Y = Math.sin(this.globalTransform.skewX) * w;
-            let vec2X = Math.cos(this.globalTransform.skewY + Math.PI * 0.5) * h; //todo optimize
-            let vec2Y = Math.sin(this.globalTransform.skewY + Math.PI * 0.5) * h;
+            let vec1X = Math.cos(this.globalTransform.skewY) * w;
+            let vec1Y = Math.sin(this.globalTransform.skewY) * w;
+            let vec2X = Math.cos(this.globalTransform.skewX + Math.PI * 0.5) * h; //todo optimize
+            let vec2Y = Math.sin(this.globalTransform.skewX + Math.PI * 0.5) * h;
             let vec3X = vec1X + vec2X;
             let vec3Y = vec1Y + vec2Y;
 
@@ -117,8 +130,8 @@ export default class Sprite extends Node {
             let maxX = Math.max(0, Math.max(vec1X, Math.max(vec2X, vec3X)));
             let maxY = Math.max(0, Math.max(vec1Y, Math.max(vec2Y, vec3Y)));
 
-            this.bounds.x = this.globalTransform.x + minX;
-            this.bounds.y = this.globalTransform.y + minY;
+            this.bounds.x = this.globalTransform.x + minX - vec3X * this.anchor.x;
+            this.bounds.y = this.globalTransform.y + minY - vec3Y * this.anchor.y;
             this.bounds.width = maxX - minX;
             this.bounds.height = maxY - minY;
         }
@@ -126,17 +139,15 @@ export default class Sprite extends Node {
         this.boundsUpdated = true;
     }
 
-    public updateGlobalTransform(poked?: boolean): boolean {
-        if (poked) {
-            this.boundsUpdated = false;
-        }
-        return super.updateGlobalTransform(poked);
-    }
-
     public getBounds(): Rect | null {
         let poked = this.updateHierarchyGlobalTransform();
         poked = this.updateGlobalTransform(poked);
         this.pokeChildrens(poked);
+
+        if (poked) {
+            this.boundsUpdated = false;
+        }
+
         this.updateBounds();
         return this.bounds;
     }
