@@ -4,43 +4,38 @@ const renderer = new Renderer(document.getElementById("canvas"));
 
 const container = renderer.stage.addChild(new Sprite());
 
-const rect1 = new Sprite();
-rect1.x = 400;
-rect1.y = 300;
-rect1.setAnchor(0.5, 0.5);
-rect1.skewX = 0.5;
-rect1.scaleX = 1.5;
-rect1.scaleY = 1.5;
-container.addChild(rect1);
-
-const rect2 = new Sprite();
-rect2.x = 50;
-rect2.y = 50;
-rect2.rotation = 45;
-rect1.addChild(rect2);
-
-let boundsSprite = new Sprite();
-renderer.stage.addChild(boundsSprite);
-
 createSprites();
 async function createSprites() {
-    let img1 = await drawCanvasSprite("rect1", 100, 50, "#ff0000");
-    rect1.setTexture(img1);
+    let bgImg = await loadImg("bg", "../assets/bg.jpg");
+    let dudeImg = await loadImg("dude", "../assets/dude.png");
+    let boundsImg = await drawCanvasSprite("bounds", 5, 5, "#ffffff");
 
-    let img2 = await drawCanvasSprite("rect2", 100, 50, "#00ff00");
-    rect2.setTexture(img2);
+    container.addChild(new Sprite(bgImg));
 
-    let img3 = await drawCanvasSprite("bounds", 5, 5, "#ffffff66");
-    boundsSprite.setTexture(img3);
+    let bounds = new Sprite(boundsImg);
+    bounds.alpha = 0.2;
+    container.addChild(bounds);
+
+    const dude = new Sprite(dudeImg);
+    dude.setPosition(400, 300)
+    dude.setAnchor(0.5);
+    dude.setScale(2);
+    container.addChild(dude);
 
     new Timer(() => {
-        rect1.rotation++;
-
-        let bounds = rect1.getBounds();
-        boundsSprite = Object.assign(boundsSprite, bounds);
-
+        dude.rotation++;
+        bounds = Object.assign(bounds, dude.getBounds());
         renderer.present();
     }).start();
+}
+
+function loadImg(id, src) {
+    let img = new Image();
+    img.id = id;
+    img.src = src;
+    return new Promise(resolve => {
+        img.addEventListener("load", () => { resolve(img) });
+    });
 }
 
 function drawCanvasSprite(id, width, height, color) {

@@ -1,7 +1,7 @@
 {
     "name": "dizzy-canvas",
     "author": "Alexey Salazkin",
-    "version": "0.0.8",
+    "version": "0.0.9",
     "description": "Simple 2d rendering engine.",
     "keywords": ["webgl", "gl", "rendering", "2d", "engine"],
     "main": "dist/dizzy-canvas.js",

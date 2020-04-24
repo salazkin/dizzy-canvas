@@ -183,15 +183,16 @@ class Node {
     get rotation() {
         return this.transform.local.rotation;
     }
-    setPosition(x = 0, y = 0) {
+    setPosition(x = 0, y) {
         this.x = x;
         this.y = y;
     }
-    setScale(x = 1, y = 1) {
+    setScale(x = 1, y) {
+        y = y || x;
         this.scaleX = x;
         this.scaleY = y;
     }
-    setSkew(x = 0, y = 0) {
+    setSkew(x = 0, y) {
         this.skewX = x;
         this.skewY = y;
     }
@@ -246,14 +247,6 @@ class Node {
             node.updateGlobalTransform(poked);
         }
         return poked;
-    }
-    updateChildrensGlobalTransform(poked) {
-        for (let i = 0; i < this.childrens.length; i++) {
-            let node = this.childrens[i];
-            poked = poked || !node.transform.globalTransformUpdated;
-            node.updateGlobalTransform(poked);
-            node.updateChildrensGlobalTransform(poked);
-        }
     }
     pokeChildrens(poked) {
         for (let i = 0; i < this.childrens.length; i++) {
@@ -347,6 +340,17 @@ class Sprite extends Node {
     get anchorY() {
         return this.anchor.y;
     }
+    setAnchor(x = 0, y) {
+        y = y || x;
+        this.anchorX = x;
+        this.anchorY = y;
+    }
+    setBlendMode(value) {
+        this.display.blend = value;
+    }
+    getBlendMode() {
+        return this.display.blend;
+    }
     setTexture(img, frame) {
         if (!this.texture) {
             this.texture = {};
@@ -373,10 +377,6 @@ class Sprite extends Node {
         if (this.bounds) {
             this.bounds.boundsUpdated = false;
         }
-    }
-    setAnchor(x = 0, y = 0) {
-        this.anchorX = x;
-        this.anchorY = y;
     }
     getMesh() {
         this.updateMesh();
@@ -460,6 +460,8 @@ class Renderer {
         this.vec2UniformLoc = null;
         this.indexBuffer = null;
         this.vertBuffer = null;
+        this.currentBlendMode = Renderer.BLEND_MODE.NORMAL;
+        this.blendModes = {};
         this.canvas = canvas;
         this.stage = new Node("stage");
         this.sceneWidth = this.canvas.width;
@@ -478,13 +480,18 @@ class Renderer {
         }
         this.gl = this.createContext();
         if (this.gl) {
+            this.blendModes[Renderer.BLEND_MODE.NORMAL] = [this.gl.ONE, this.gl.ONE_MINUS_SRC_ALPHA];
+            this.blendModes[Renderer.BLEND_MODE.ADD] = [this.gl.ONE, this.gl.ONE];
+            this.blendModes[Renderer.BLEND_MODE.MULTIPLY] = [this.gl.DST_COLOR, this.gl.ONE_MINUS_SRC_ALPHA];
             this.gl.viewport(0, 0, this.sceneWidth, this.sceneHeight);
             this.gl.clearColor(0, 0, 0, 1);
-            this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
             this.gl.enable(this.gl.BLEND);
+            this.gl.blendEquation(this.gl.FUNC_ADD);
+            this.gl.blendFunc(this.blendModes[Renderer.BLEND_MODE.NORMAL][0], this.blendModes[Renderer.BLEND_MODE.NORMAL][1]);
             this.gl.disable(this.gl.DEPTH_TEST);
             this.gl.disable(this.gl.CULL_FACE);
             this.gl.disable(this.gl.STENCIL_TEST);
+            this.gl.pixelStorei(this.gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
             this.vertexShader = [
                 "uniform vec2 uRatio;",
                 "attribute vec4 aPos;",
@@ -512,42 +519,36 @@ class Renderer {
                 "varying vec2 vTextureCoord;",
                 "varying float vAlpha;",
                 "void main() {",
-                "gl_FragColor = texture2D(uImage, vTextureCoord);",
+                "gl_FragColor = texture2D(uImage, vTextureCoord) * vAlpha;",
                 "}"
             ].join("\n");
             this.vs = this.gl.createShader(this.gl.VERTEX_SHADER);
-            if (this.vs) {
-                this.gl.shaderSource(this.vs, this.vertexShader);
-                this.gl.compileShader(this.vs);
-            }
+            this.gl.shaderSource(this.vs, this.vertexShader);
+            this.gl.compileShader(this.vs);
             this.fs = this.gl.createShader(this.gl.FRAGMENT_SHADER);
-            if (this.fs) {
-                this.gl.shaderSource(this.fs, this.fragmentShader);
-                this.gl.compileShader(this.fs);
-            }
+            this.gl.shaderSource(this.fs, this.fragmentShader);
+            this.gl.compileShader(this.fs);
             this.program = this.gl.createProgram();
-            if (this.program && this.vs && this.fs) {
-                this.gl.attachShader(this.program, this.vs);
-                this.gl.attachShader(this.program, this.fs);
-                this.gl.linkProgram(this.program);
-                this.gl.useProgram(this.program);
-                this.vec2UniformLoc = this.gl.getUniformLocation(this.program, "uRatio");
-                this.gl.uniform2f(this.vec2UniformLoc, 2 / this.sceneWidth, 2 / this.sceneHeight);
-                let positionLocation = this.gl.getAttribLocation(this.program, "aPos");
-                this.gl.enableVertexAttribArray(positionLocation);
-                let texCoordLocation = this.gl.getAttribLocation(this.program, "aTex");
-                this.gl.enableVertexAttribArray(texCoordLocation);
-                this.matABCDCoordLocation = this.gl.getAttribLocation(this.program, "aTrans");
-                this.gl.enableVertexAttribArray(this.matABCDCoordLocation);
-                this.indexBuffer = this.gl.createBuffer();
-                this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
-                this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, this.indexData, this.gl.STATIC_DRAW);
-                this.vertBuffer = this.gl.createBuffer();
-                this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vertBuffer);
-                this.gl.vertexAttribPointer(positionLocation, 4, this.gl.FLOAT, false, VERTEX_DATA_LENGTH, 0);
-                this.gl.vertexAttribPointer(this.matABCDCoordLocation, 4, this.gl.FLOAT, false, VERTEX_DATA_LENGTH, 16);
-                this.gl.vertexAttribPointer(texCoordLocation, 3, this.gl.FLOAT, false, VERTEX_DATA_LENGTH, 32);
-            }
+            this.gl.attachShader(this.program, this.vs);
+            this.gl.attachShader(this.program, this.fs);
+            this.gl.linkProgram(this.program);
+            this.gl.useProgram(this.program);
+            this.vec2UniformLoc = this.gl.getUniformLocation(this.program, "uRatio");
+            this.gl.uniform2f(this.vec2UniformLoc, 2 / this.sceneWidth, 2 / this.sceneHeight);
+            let positionLocation = this.gl.getAttribLocation(this.program, "aPos");
+            this.gl.enableVertexAttribArray(positionLocation);
+            let texCoordLocation = this.gl.getAttribLocation(this.program, "aTex");
+            this.gl.enableVertexAttribArray(texCoordLocation);
+            this.matABCDCoordLocation = this.gl.getAttribLocation(this.program, "aTrans");
+            this.gl.enableVertexAttribArray(this.matABCDCoordLocation);
+            this.indexBuffer = this.gl.createBuffer();
+            this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
+            this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, this.indexData, this.gl.STATIC_DRAW);
+            this.vertBuffer = this.gl.createBuffer();
+            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vertBuffer);
+            this.gl.vertexAttribPointer(positionLocation, 4, this.gl.FLOAT, false, VERTEX_DATA_LENGTH, 0);
+            this.gl.vertexAttribPointer(this.matABCDCoordLocation, 4, this.gl.FLOAT, false, VERTEX_DATA_LENGTH, 16);
+            this.gl.vertexAttribPointer(texCoordLocation, 3, this.gl.FLOAT, false, VERTEX_DATA_LENGTH, 32);
         }
     }
     resize(width, height) {
@@ -566,9 +567,7 @@ class Renderer {
         let names = ["webgl", "experimental-webgl", "moz-webgl", "webkit-3d"];
         let context = null;
         for (let i = 0; i < names.length; i++) {
-            context = this.canvas.getContext(names[i], {
-                alpha: false
-            });
+            context = this.canvas.getContext(names[i], { alpha: false, premultipliedAlpha: false });
             if (context) {
                 break;
             }
@@ -587,8 +586,8 @@ class Renderer {
             let texture = this.gl.createTexture();
             this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
             this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, image);
-            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.NEAREST);
-            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.NEAREST);
+            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
+            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
             this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
             this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
             this.textures[image.id] = texture;
@@ -601,46 +600,66 @@ class Renderer {
         if (!this.gl) {
             return;
         }
-        this.stage.updateChildrensGlobalTransform();
-        this.draw(this.stage.childrens);
+        for (let i = 0; i < this.stage.childrens.length; i++) {
+            this.draw(this.stage.childrens[i]);
+        }
         this.drawTriangles();
     }
-    draw(childrens) {
-        for (let i = 0; i < childrens.length; i++) {
-            let sprite = childrens[i];
-            if (!sprite.visible) {
-                continue;
+    draw(sprite, alpha, blend, poked) {
+        if (!sprite.visible) {
+            return;
+        }
+        alpha = (alpha || 1) * sprite.alpha;
+        blend = sprite.getBlendMode() || blend || Renderer.BLEND_MODE.NORMAL;
+        poked = sprite.updateGlobalTransform(poked);
+        let texture = sprite.getTexture();
+        if (texture) {
+            if (this.currentTexture !== texture) {
+                this.drawTriangles();
+                this.addTexture(texture);
+                this.currentTexture = texture;
             }
-            let texture = sprite.getTexture();
-            if (texture) {
-                if (this.currentTexture !== texture) {
-                    this.drawTriangles();
-                    this.addTexture(texture);
-                    this.currentTexture = texture;
-                }
-                if (this.indexOffset >= this.indexData.length) {
-                    this.drawTriangles();
-                }
-                let mesh = sprite.getMesh();
-                let vertexes = mesh.vertexes;
-                let uv = mesh.uv;
-                let tr = sprite.transform.global;
-                for (let i = 0; i < vertexes.length; i += 2) {
-                    this.vertexData[this.vertexOffset++] = vertexes[i];
-                    this.vertexData[this.vertexOffset++] = vertexes[i + 1];
-                    this.vertexData[this.vertexOffset++] = tr.x;
-                    this.vertexData[this.vertexOffset++] = tr.y;
-                    this.vertexData[this.vertexOffset++] = tr.scaleX;
-                    this.vertexData[this.vertexOffset++] = tr.scaleY;
-                    this.vertexData[this.vertexOffset++] = tr.skewX;
-                    this.vertexData[this.vertexOffset++] = tr.skewY;
-                    this.vertexData[this.vertexOffset++] = uv[i];
-                    this.vertexData[this.vertexOffset++] = uv[i + 1];
-                    this.vertexData[this.vertexOffset++] = sprite.alpha;
-                }
-                this.indexOffset += INDEX_DATA_LENGTH;
+            if (this.indexOffset >= this.indexData.length) {
+                this.drawTriangles();
             }
-            this.draw(sprite.childrens);
+            if (this.currentBlendMode !== blend) {
+                this.drawTriangles();
+                if (this.blendModes[blend]) {
+                    this.currentBlendMode = blend;
+                }
+                else {
+                    console.warn(`blend mode error: \"${blend}\" is not valid blend mode.`);
+                    this.currentBlendMode = Renderer.BLEND_MODE.NORMAL;
+                }
+                let blendMode = this.blendModes[this.currentBlendMode];
+                if (blendMode.length > 2) {
+                    this.gl.blendFuncSeparate(blendMode[0], blendMode[1], blendMode[2], blendMode[3]);
+                }
+                else {
+                    this.gl.blendFunc(blendMode[0], blendMode[1]);
+                }
+            }
+            let mesh = sprite.getMesh();
+            let vertexes = mesh.vertexes;
+            let uv = mesh.uv;
+            let tr = sprite.transform.global;
+            for (let i = 0; i < vertexes.length; i += 2) {
+                this.vertexData[this.vertexOffset++] = vertexes[i];
+                this.vertexData[this.vertexOffset++] = vertexes[i + 1];
+                this.vertexData[this.vertexOffset++] = tr.x;
+                this.vertexData[this.vertexOffset++] = tr.y;
+                this.vertexData[this.vertexOffset++] = tr.scaleX;
+                this.vertexData[this.vertexOffset++] = tr.scaleY;
+                this.vertexData[this.vertexOffset++] = tr.skewX;
+                this.vertexData[this.vertexOffset++] = tr.skewY;
+                this.vertexData[this.vertexOffset++] = uv[i];
+                this.vertexData[this.vertexOffset++] = uv[i + 1];
+                this.vertexData[this.vertexOffset++] = alpha;
+            }
+            this.indexOffset += INDEX_DATA_LENGTH;
+        }
+        for (let i = 0; i < sprite.childrens.length; i++) {
+            this.draw(sprite.childrens[i], alpha, blend, poked);
         }
     }
     drawTriangles() {
@@ -655,6 +674,11 @@ class Renderer {
         this.indexOffset = 0;
     }
 }
+Renderer.BLEND_MODE = {
+    NORMAL: "normal",
+    ADD: "add",
+    MULTIPLY: "multiply"
+};
 
 class Timer {
     constructor(cb) {

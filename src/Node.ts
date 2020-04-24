@@ -105,17 +105,18 @@ class Node {
         return this.transform.local.rotation;
     }
 
-    public setPosition(x: number = 0, y: number = 0): void {
+    public setPosition(x: number = 0, y: number): void {
         this.x = x;
         this.y = y;
     }
 
-    public setScale(x: number = 1, y: number = 1): void {
+    public setScale(x: number = 1, y?: number): void {
+        y = y || x;
         this.scaleX = x;
         this.scaleY = y;
     }
 
-    public setSkew(x: number = 0, y: number = 0): void {
+    public setSkew(x: number = 0, y: number): void {
         this.skewX = x;
         this.skewY = y;
     }
@@ -173,15 +174,6 @@ class Node {
             node.updateGlobalTransform(poked);
         }
         return poked;
-    }
-
-    public updateChildrensGlobalTransform(poked?: boolean): void {
-        for (let i = 0; i < this.childrens.length; i++) {
-            let node = this.childrens[i];
-            poked = poked || !node.transform.globalTransformUpdated;
-            node.updateGlobalTransform(poked);
-            node.updateChildrensGlobalTransform(poked);
-        }
     }
 
     public pokeChildrens(poked?: boolean): void {

@@ -52,15 +52,14 @@ export declare class Node {
 	get skewY(): number;
 	set rotation(value: number);
 	get rotation(): number;
-	setPosition(x?: number, y?: number): void;
+	setPosition(x: number, y: number): void;
 	setScale(x?: number, y?: number): void;
-	setSkew(x?: number, y?: number): void;
+	setSkew(x: number, y: number): void;
 	addChild(node: Node): Node;
 	removeChild(node: Node): void;
 	updateHierarchy(): void;
 	protected poke(): void;
 	updateHierarchyGlobalTransform(): boolean;
-	updateChildrensGlobalTransform(poked?: boolean): void;
 	pokeChildrens(poked?: boolean): void;
 	updateGlobalTransform(poked?: boolean): boolean;
 	kill(): void;
@@ -108,10 +107,12 @@ export declare class Sprite extends Node {
 	get anchorX(): number;
 	set anchorY(value: number);
 	get anchorY(): number;
+	setAnchor(x?: number, y?: number): void;
+	setBlendMode(value: string): void;
+	getBlendMode(): string;
 	setTexture(img: HTMLImageElement, frame?: Rect): void;
 	getTexture(): HTMLImageElement | null;
 	setFrame(rect: Rect): void;
-	setAnchor(x?: number, y?: number): void;
 	getMesh(): {
 		vertexes?: number[];
 		uv?: number[];
@@ -122,6 +123,11 @@ export declare class Sprite extends Node {
 	getBounds(): Rect | null;
 }
 export declare class Renderer {
+	static BLEND_MODE: {
+		NORMAL: string;
+		ADD: string;
+		MULTIPLY: string;
+	};
 	readonly stage: Node;
 	sceneWidth: number;
 	sceneHeight: number;
@@ -142,12 +148,14 @@ export declare class Renderer {
 	private readonly indexBuffer;
 	private readonly vertBuffer;
 	private currentTexture;
+	private currentBlendMode;
+	private readonly blendModes;
 	constructor(canvas: HTMLCanvasElement);
 	resize(width: number, height: number): void;
 	createContext(): null | WebGLRenderingContext;
 	addTexture(image: HTMLImageElement): void;
 	present(): void;
-	draw(childrens: Node[]): void;
+	draw(sprite: Sprite, alpha?: number, blend?: string, poked?: boolean): void;
 	drawTriangles(): void;
 }
 export declare class Timer {

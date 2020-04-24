@@ -18,22 +18,22 @@ export default class Sprite extends Node {
 
     set width(value: number) {
         if (this.texture) {
-            this.scaleX = value / this.texture.rect!.width;
+            this.scaleX = value / this.texture.rect.width;
         }
     }
 
     get width(): number {
-        return this.texture ? this.texture.rect!.width * this.scaleX : 0;
+        return this.texture ? this.texture.rect.width * this.scaleX : 0;
     }
 
     set height(value: number) {
         if (this.texture) {
-            this.scaleY = value / this.texture.rect!.height;
+            this.scaleY = value / this.texture.rect.height;
         }
     }
 
     get height(): number {
-        return this.texture ? this.texture.rect!.height * this.scaleY : 0;
+        return this.texture ? this.texture.rect.height * this.scaleY : 0;
     }
 
     set visible(value: boolean) {
@@ -74,6 +74,20 @@ export default class Sprite extends Node {
         return this.anchor.y;
     }
 
+    public setAnchor(x: number = 0, y?: number): void {
+        y = y || x;
+        this.anchorX = x;
+        this.anchorY = y;
+    }
+
+    public setBlendMode(value: string) {
+        this.display.blend = value;
+    }
+
+    public getBlendMode(): string {
+        return this.display.blend;
+    }
+
     public setTexture(img: HTMLImageElement, frame?: Rect): void {
         if (!this.texture) {
             this.texture = {};
@@ -87,7 +101,7 @@ export default class Sprite extends Node {
     }
 
     public getTexture(): HTMLImageElement | null {
-        return this.texture ? this.texture.img! : null;
+        return this.texture ? this.texture.img : null;
     }
 
     public setFrame(rect: Rect): void {
@@ -103,11 +117,6 @@ export default class Sprite extends Node {
         }
     }
 
-    public setAnchor(x: number = 0, y: number = 0): void {
-        this.anchorX = x;
-        this.anchorY = y;
-    }
-
     public getMesh(): { vertexes?: number[], uv?: number[], meshUpdated: boolean; } | null {
         this.updateMesh();
         return this.mesh;
@@ -120,8 +129,8 @@ export default class Sprite extends Node {
         if (!this.mesh) {
             this.mesh = { meshUpdated: false };
         }
-        if (!this.mesh!.meshUpdated) {
-            let rect = this.texture.rect!;
+        if (!this.mesh.meshUpdated) {
+            let rect = this.texture.rect;
             let offsetX = rect.width * this.anchor.x;
             let offsetY = rect.height * this.anchor.y;
 
@@ -132,10 +141,10 @@ export default class Sprite extends Node {
                 -offsetX, -rect.height + offsetY
             ];
 
-            let uv0 = rect.x / this.texture.img!.width;
-            let uv1 = rect.y / this.texture.img!.height;
-            let uv2 = (rect.x + rect.width) / this.texture.img!.width;
-            let uv3 = (rect.y + rect.height) / this.texture.img!.height;
+            let uv0 = rect.x / this.texture.img.width;
+            let uv1 = rect.y / this.texture.img.height;
+            let uv2 = (rect.x + rect.width) / this.texture.img.width;
+            let uv3 = (rect.y + rect.height) / this.texture.img.height;
             this.mesh.uv = [uv0, uv1, uv2, uv1, uv2, uv3, uv0, uv3];
             this.mesh.meshUpdated = true;
         }
@@ -167,10 +176,10 @@ export default class Sprite extends Node {
             let maxX = Math.max(0, Math.max(vec1X, Math.max(vec2X, vec3X)));
             let maxY = Math.max(0, Math.max(vec1Y, Math.max(vec2Y, vec3Y)));
 
-            this.bounds.rect!.x = this.transform.global.x + minX - vec3X * this.anchor.x;
-            this.bounds.rect!.y = this.transform.global.y + minY - vec3Y * this.anchor.y;
-            this.bounds.rect!.width = maxX - minX;
-            this.bounds.rect!.height = maxY - minY;
+            this.bounds.rect.x = this.transform.global.x + minX - vec3X * this.anchor.x;
+            this.bounds.rect.y = this.transform.global.y + minY - vec3Y * this.anchor.y;
+            this.bounds.rect.width = maxX - minX;
+            this.bounds.rect.height = maxY - minY;
 
             this.bounds.boundsUpdated = true;
         }
@@ -182,11 +191,11 @@ export default class Sprite extends Node {
         this.pokeChildrens(poked);
 
         if (poked && this.bounds) {
-            this.bounds!.boundsUpdated = false;
+            this.bounds.boundsUpdated = false;
         }
 
         this.updateBounds();
-        return this.bounds ? this.bounds.rect! : null;
+        return this.bounds ? this.bounds.rect : null;
     }
 
 
