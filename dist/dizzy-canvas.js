@@ -261,15 +261,18 @@ class Node {
     updateGlobalTransform(poked) {
         poked = poked || !this.transform.globalTransformUpdated;
         if (poked) {
-            if (this.parent) {
-                this.transform.global.concat(this.transform.local, this.parent.transform.global);
-            }
-            else {
-                this.transform.global.copy(this.transform.local);
-            }
-            this.transform.globalTransformUpdated = true;
+            this.updateTransformData();
         }
         return poked;
+    }
+    updateTransformData() {
+        if (this.parent) {
+            this.transform.global.concat(this.transform.local, this.parent.transform.global);
+        }
+        else {
+            this.transform.global.copy(this.transform.local);
+        }
+        this.transform.globalTransformUpdated = true;
     }
     kill() {
         this.childrens.forEach(children => children.parent = null);
@@ -434,13 +437,16 @@ class Sprite extends Node {
             this.bounds.boundsUpdated = true;
         }
     }
+    updateTransformData() {
+        super.updateTransformData();
+        if (this.bounds) {
+            this.bounds.boundsUpdated = false;
+        }
+    }
     getBounds() {
         let poked = this.updateHierarchyGlobalTransform();
         poked = this.updateGlobalTransform(poked);
         this.pokeChildrens(poked);
-        if (poked && this.bounds) {
-            this.bounds.boundsUpdated = false;
-        }
         this.updateBounds();
         return this.bounds ? this.bounds.rect : null;
     }

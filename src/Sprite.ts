@@ -185,15 +185,17 @@ export default class Sprite extends Node {
         }
     }
 
+    protected updateTransformData(): void {
+        super.updateTransformData();
+        if (this.bounds) {
+            this.bounds.boundsUpdated = false;
+        }
+    }
+
     public getBounds(): Rect | null {
         let poked = this.updateHierarchyGlobalTransform();
         poked = this.updateGlobalTransform(poked);
         this.pokeChildrens(poked);
-
-        if (poked && this.bounds) {
-            this.bounds.boundsUpdated = false;
-        }
-
         this.updateBounds();
         return this.bounds ? this.bounds.rect : null;
     }

@@ -62,6 +62,7 @@ export declare class Node {
 	updateHierarchyGlobalTransform(): boolean;
 	pokeChildrens(poked?: boolean): void;
 	updateGlobalTransform(poked?: boolean): boolean;
+	protected updateTransformData(): void;
 	kill(): void;
 }
 export declare type Rect = {
@@ -120,6 +121,7 @@ export declare class Sprite extends Node {
 	} | null;
 	updateMesh(): void;
 	updateBounds(): void;
+	protected updateTransformData(): void;
 	getBounds(): Rect | null;
 }
 export declare class Renderer {

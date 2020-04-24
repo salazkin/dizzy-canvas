@@ -190,14 +190,18 @@ class Node {
     public updateGlobalTransform(poked?: boolean): boolean {
         poked = poked || !this.transform.globalTransformUpdated;
         if (poked) {
-            if (this.parent) {
-                this.transform.global.concat(this.transform.local, this.parent.transform.global);
-            } else {
-                this.transform.global.copy(this.transform.local);
-            }
-            this.transform.globalTransformUpdated = true;
+            this.updateTransformData();
         }
         return poked;
+    }
+
+    protected updateTransformData(): void {
+        if (this.parent) {
+            this.transform.global.concat(this.transform.local, this.parent.transform.global);
+        } else {
+            this.transform.global.copy(this.transform.local);
+        }
+        this.transform.globalTransformUpdated = true;
     }
 
     public kill(): void {
