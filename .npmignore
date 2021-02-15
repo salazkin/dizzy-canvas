@@ -1,5 +1,5 @@
 src
-bunnytest
+demo
 .vscode
 rollup.config.js
 tsconfig.json
