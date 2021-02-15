@@ -7,32 +7,32 @@ const minX = 0;
 const maxY = renderer.sceneHeight;
 const minY = 0;
 const gravity = 0.5;
-const bunnysData = [];
+const bunniesData = [];
 
-let bunnyImg = new Image();
+const bunnyImg = new Image();
 bunnyImg.src = "../assets/bunny.png";
 bunnyImg.id = "bunny";
 bunnyImg.addEventListener('load', () => {
     new Timer(() => {
-        addTestBunnys();
-        updateBunnys();
+        addTestBunnies();
+        updateBunnies();
         renderer.present();
     }).start();
 });
 
-function addTestBunnys() {
+function addTestBunnies() {
     for (let i = 0; i < 10; i++) {
-        let bunny = new Sprite(bunnyImg);
+        const bunny = new Sprite(bunnyImg);
         bunny.scaleX = bunny.scaleY = 0.5 + Math.random() * 0.5;
         bunny.rotation = (Math.random() - 0.5) * 360;
         renderer.stage.addChild(bunny);
-        bunnysData.push({ bunny: bunny, speedX: Math.random() * 10, speedY: (Math.random() * 10) - 5 });
+        bunniesData.push({ bunny: bunny, speedX: Math.random() * 10, speedY: (Math.random() * 10) - 5 });
     }
 }
 
-function updateBunnys() {
-    bunnysData.forEach(data => {
-        let bunny = data.bunny;
+function updateBunnies() {
+    bunniesData.forEach(data => {
+        const bunny = data.bunny;
         bunny.x += data.speedX;
         bunny.y += data.speedY;
         data.speedY += gravity;

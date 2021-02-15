@@ -7,8 +7,8 @@ const container = renderer.stage.addChild(new Sprite());
 
 createSprites();
 async function createSprites() {
-    let bgImg = await loadImg("bg", "../assets/bg.jpg");
-    let dudeImg = await loadImg("dude", "../assets/dude.png");
+    const bgImg = await loadImg("bg", "../assets/bg.jpg");
+    const dudeImg = await loadImg("dude", "../assets/dude.png");
 
     const bg = new Sprite(bgImg);
     container.addChild(bg);
@@ -42,10 +42,10 @@ async function createSprites() {
 }
 
 function loadImg(id, src) {
-    let img = new Image();
+    const img = new Image();
     img.id = id;
     img.src = src;
     return new Promise(resolve => {
-        img.addEventListener("load", () => { resolve(img) });
+        img.addEventListener("load", () => { resolve(img); });
     });
 }

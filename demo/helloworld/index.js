@@ -2,7 +2,7 @@ import { Sprite, Renderer } from "../../dist/dizzy-canvas.js";
 
 const renderer = new Renderer(document.getElementById("canvas"));
 
-let dudeImg = new Image();
+const dudeImg = new Image();
 dudeImg.src = "../assets/dude.png";
 dudeImg.id = "dude";
 
