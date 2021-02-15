@@ -7,7 +7,7 @@ class Node {
         global: Transform,
         globalTransformUpdated: boolean;
     } = { local: new Transform(), global: new Transform(), globalTransformUpdated: false };
-    public readonly childrens: Node[] = [];
+    public readonly children: Node[] = [];
     protected readonly hierarchy: Node[] = [];
     public parent: Node | null = null;
     public name: string;
@@ -92,7 +92,7 @@ class Node {
     }
 
     set rotation(value: number) {
-        let rotation = value % 360;
+        const rotation = value % 360;
         if (this.transform.local.rotation !== rotation) {
             this.transform.local.skewX = this.transform.local.skewY = value * Math.PI / 180;
             this.transform.local.rotation = rotation;
@@ -127,14 +127,14 @@ class Node {
         }
         node.parent = this;
         node.updateHierarchy();
-        this.childrens.push(node);
+        this.children.push(node);
         return node;
     }
 
     public removeChild(node: Node): void {
-        for (let i = 0; i < this.childrens.length; i++) {
-            if (this.childrens[i] === node) {
-                this.childrens.splice(i, 1);
+        for (let i = 0; i < this.children.length; i++) {
+            if (this.children[i] === node) {
+                this.children.splice(i, 1);
             }
         }
         if (this.parent) {
@@ -156,8 +156,8 @@ class Node {
                 break;
             }
         }
-        for (let i = 0; i < this.childrens.length; i++) {
-            this.childrens[i].updateHierarchy();
+        for (let i = 0; i < this.children.length; i++) {
+            this.children[i].updateHierarchy();
         }
         this.poke();
     }
@@ -169,20 +169,20 @@ class Node {
     public updateHierarchyGlobalTransform(): boolean {
         let poked = false;
         for (let i = 0; i < this.hierarchy.length; i++) {
-            let node = this.hierarchy[i];
+            const node = this.hierarchy[i];
             poked = poked || !node.transform.globalTransformUpdated;
             node.updateGlobalTransform(poked);
         }
         return poked;
     }
 
-    public pokeChildrens(poked?: boolean): void {
-        for (let i = 0; i < this.childrens.length; i++) {
-            let node = this.childrens[i];
+    public pokeChildren(poked?: boolean): void {
+        for (let i = 0; i < this.children.length; i++) {
+            const node = this.children[i];
             poked = poked || !node.transform.globalTransformUpdated;
             if (poked) {
                 node.poke();
-                node.pokeChildrens(poked);
+                node.pokeChildren(poked);
             }
         }
     }
@@ -205,8 +205,8 @@ class Node {
     }
 
     public kill(): void {
-        this.childrens.forEach(children => children.parent = null);
-        this.childrens.length = 0;
+        this.children.forEach(children => children.parent = null);
+        this.children.length = 0;
         this.hierarchy.length = 0;
         if (this.parent) {
             this.parent.removeChild(this);

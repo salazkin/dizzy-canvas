@@ -34,7 +34,7 @@ export default class Renderer {
     private currentTexture: undefined | HTMLImageElement;
     private currentBlendMode: string = Renderer.BLEND_MODE.NORMAL;
     private readonly blendModes: { [key: string]: GLenum[]; } = {};
-    
+
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
 
@@ -49,12 +49,12 @@ export default class Renderer {
         for (let i = 0; i < MAX_SPRITES; i++) {
             let index = i * INDEX_DATA_LENGTH;
             let offset = i * 4;
-            this.indexData[index + 0] = 0 + offset;
-            this.indexData[index + 1] = 3 + offset;
-            this.indexData[index + 2] = 1 + offset;
-            this.indexData[index + 3] = 2 + offset;
-            this.indexData[index + 4] = 1 + offset;
-            this.indexData[index + 5] = 3 + offset;
+            this.indexData[index++] = offset;
+            this.indexData[index++] = offset + 3;
+            this.indexData[index++] = offset + 1;
+            this.indexData[index++] = offset + 2;
+            this.indexData[index++] = offset + 1;
+            this.indexData[index++] = offset + 3;
         }
 
         this.gl = this.createContext();
@@ -130,10 +130,10 @@ export default class Renderer {
             //this.clipUniformLoc = gl.getUniformLocation(this.program, "uClip");
             //gl.uniform4f(this.clipUniformLoc, 0, width, height, 0);
 
-            let positionLocation = this.gl.getAttribLocation(this.program, "aPos");
+            const positionLocation = this.gl.getAttribLocation(this.program, "aPos");
             this.gl.enableVertexAttribArray(positionLocation);
 
-            let texCoordLocation = this.gl.getAttribLocation(this.program, "aTex");
+            const texCoordLocation = this.gl.getAttribLocation(this.program, "aTex");
             this.gl.enableVertexAttribArray(texCoordLocation);
 
             this.matABCDCoordLocation = this.gl.getAttribLocation(this.program, "aTrans");
@@ -166,7 +166,7 @@ export default class Renderer {
     }
 
     public createContext(): null | WebGLRenderingContext {
-        let names = ["webgl", "experimental-webgl", "moz-webgl", "webkit-3d"];
+        const names = ["webgl", "experimental-webgl", "moz-webgl", "webkit-3d"];
         let context = null;
         for (let i = 0; i < names.length; i++) {
             context = this.canvas.getContext(names[i], { alpha: false, premultipliedAlpha: false });
@@ -186,7 +186,7 @@ export default class Renderer {
             return;
         }
         if (!this.textures[image.id]) {
-            let texture = this.gl.createTexture();
+            const texture = this.gl.createTexture();
             this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
             this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, image);
             this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
@@ -203,8 +203,8 @@ export default class Renderer {
         if (!this.gl) {
             return;
         }
-        for (let i = 0; i < this.stage.childrens.length; i++) {
-            this.draw(this.stage.childrens[i] as Sprite);
+        for (let i = 0; i < this.stage.children.length; i++) {
+            this.draw(this.stage.children[i] as Sprite);
         }
         this.drawTriangles();
     }
@@ -217,7 +217,7 @@ export default class Renderer {
         blend = sprite.getBlendMode() || blend || Renderer.BLEND_MODE.NORMAL;
         poked = sprite.updateGlobalTransform(poked);
 
-        let texture = sprite.getTexture();
+        const texture = sprite.getTexture();
 
         if (texture) {
             if (this.currentTexture !== texture) {
@@ -238,7 +238,7 @@ export default class Renderer {
                     console.warn(`blend mode error: \"${blend}\" is not valid blend mode.`);
                     this.currentBlendMode = Renderer.BLEND_MODE.NORMAL;
                 }
-                let blendMode = this.blendModes[this.currentBlendMode];
+                const blendMode = this.blendModes[this.currentBlendMode];
                 if (blendMode.length > 2) {
                     this.gl.blendFuncSeparate(blendMode[0], blendMode[1], blendMode[2], blendMode[3]);
                 } else {
@@ -246,10 +246,10 @@ export default class Renderer {
                 }
             }
 
-            let mesh = sprite.getMesh();
-            let vertexes = mesh.vertexes;
-            let uv = mesh.uv;
-            let tr = sprite.transform.global;
+            const mesh = sprite.getMesh();
+            const vertexes = mesh.vertexes;
+            const uv = mesh.uv;
+            const tr = sprite.transform.global;
 
             for (let i = 0; i < vertexes.length; i += 2) {
                 this.vertexData[this.vertexOffset++] = vertexes[i];
@@ -269,8 +269,8 @@ export default class Renderer {
             this.indexOffset += INDEX_DATA_LENGTH;
         }
 
-        for (let i = 0; i < sprite.childrens.length; i++) {
-            this.draw(sprite.childrens[i] as Sprite, alpha, blend, poked);
+        for (let i = 0; i < sprite.children.length; i++) {
+            this.draw(sprite.children[i] as Sprite, alpha, blend, poked);
         }
     }
 

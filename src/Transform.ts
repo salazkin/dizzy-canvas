@@ -59,10 +59,10 @@ export default class Transform {
             this.matrixUpdated = false;
 
         } else if (global.equalSkew && global.noScale) {
-            let globalSinAngel = Math.sin(global.skewX);
-            let globalCosAngel = Math.cos(global.skewY);
-            let posX = local.x * globalCosAngel - local.y * globalSinAngel;
-            let posY = local.x * globalSinAngel + local.y * globalCosAngel;
+            const sin = Math.sin(global.skewX);
+            const cos = Math.cos(global.skewY);
+            const posX = local.x * cos - local.y * sin;
+            const posY = local.x * sin + local.y * cos;
             this.x = posX * global.scaleX + global.x;
             this.y = posY * global.scaleY + global.y;
             this.skewX = local.skewX + global.skewX;
@@ -74,8 +74,8 @@ export default class Transform {
             local.updateMatrix();
             global.updateMatrix();
 
-            let m1 = local.matrix;
-            let m2 = global.matrix;
+            const m1 = local.matrix;
+            const m2 = global.matrix;
 
             this.matrix.a = m1.a * m2.a + m1.b * m2.c;
             this.matrix.c = m1.c * m2.a + m1.d * m2.c;
