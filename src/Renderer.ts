@@ -113,7 +113,8 @@ export default class Renderer {
 
                 "void main() {",
                 "vec4 color = texture2D(uImage, vTextureCoord);",
-                "gl_FragColor = vec4(mix(color.rgb, vTint.rgb, vTint.a) * color.a * vAlpha, 0);",
+                "float alpha = color.a * vAlpha;",
+                "gl_FragColor = vec4(mix(color.rgb, vTint.rgb, vTint.a) * alpha, alpha);",
                 "}"
             ].join("\n");
 
