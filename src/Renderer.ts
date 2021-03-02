@@ -1,8 +1,9 @@
 import Sprite from "./Sprite";
 import Node from "./Node";
+import { Vec4 } from "Types";
 
 const MAX_SPRITES = 100000;
-const VERTEX_DATA_LENGTH = (4 + 4 + 3) * 4; //(x, y, tx, ty) + (a, b, c, d) + (u, v, alpha)
+const VERTEX_DATA_LENGTH = (4 + 4 + 4 + 3) * 4; //(x, y, tx, ty) + (a, b, c, d) + (tintR, tintG, tintB, tintA) + (u, v, alpha)
 const INDEX_DATA_LENGTH = 6;
 
 export default class Renderer {
@@ -28,12 +29,12 @@ export default class Renderer {
     private readonly fs: WebGLShader | null = null;
     private readonly program: WebGLProgram | null = null;
     private readonly vec2UniformLoc: WebGLUniformLocation | null = null;
-    private readonly matABCDCoordLocation: undefined | GLint;
     private readonly indexBuffer: WebGLBuffer | null = null;
     private readonly vertBuffer: WebGLBuffer | null = null;
     private currentTexture: undefined | HTMLImageElement;
     private currentBlendMode: string = Renderer.BLEND_MODE.NORMAL;
     private readonly blendModes: { [key: string]: GLenum[]; } = {};
+    private readonly defaultTint: Vec4 = [0, 0, 0, 0];
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
@@ -79,9 +80,13 @@ export default class Renderer {
                 "uniform vec2 uRatio;",
                 "attribute vec4 aPos;",
                 "attribute vec4 aTrans;",
+                "attribute vec4 aTint;",
                 "attribute vec3 aTex;",
+
                 "varying vec2 vTextureCoord;",
                 "varying float vAlpha;",
+                "varying vec4 vTint;",
+
                 "void main() {",
                 "float a = (aTrans.x * cos(aTrans.w)) * uRatio.x;",
                 "float c = (aTrans.y * sin(-aTrans.z)) * -uRatio.x;",
@@ -93,19 +98,22 @@ export default class Renderer {
                 "gl_Position = vec4(outMatrix * vec3(aPos.xy, 1.0), 1.0);",
                 "vTextureCoord = aTex.xy;",
                 "vAlpha = aTex.z;",
+                "vTint = aTint;",
                 "}",
             ].join("\n");
 
             this.fragmentShader = [
                 "precision mediump float;",
                 "uniform sampler2D uImage;",
+
                 "uniform vec4 uClip;",
                 "varying vec2 vTextureCoord;",
                 "varying float vAlpha;",
+                "varying vec4 vTint;",
+
                 "void main() {",
-                //"if (gl_FragCoord.x > uClip.x && gl_FragCoord.x < uClip.y && gl_FragCoord.y < uClip.z && gl_FragCoord.y > uClip.w) {",
-                "gl_FragColor = texture2D(uImage, vTextureCoord) * vAlpha;",
-                //"} else {discard;}",
+                "vec4 color = texture2D(uImage, vTextureCoord);",
+                "gl_FragColor = vec4(mix(color.rgb, vTint.rgb, vTint.a) * color.a * vAlpha, 0);",
                 "}"
             ].join("\n");
 
@@ -127,17 +135,17 @@ export default class Renderer {
             this.vec2UniformLoc = this.gl.getUniformLocation(this.program, "uRatio");
             this.gl.uniform2f(this.vec2UniformLoc, 2 / this.sceneWidth, 2 / this.sceneHeight);
 
-            //this.clipUniformLoc = gl.getUniformLocation(this.program, "uClip");
-            //gl.uniform4f(this.clipUniformLoc, 0, width, height, 0);
-
             const positionLocation = this.gl.getAttribLocation(this.program, "aPos");
             this.gl.enableVertexAttribArray(positionLocation);
 
             const texCoordLocation = this.gl.getAttribLocation(this.program, "aTex");
             this.gl.enableVertexAttribArray(texCoordLocation);
 
-            this.matABCDCoordLocation = this.gl.getAttribLocation(this.program, "aTrans");
-            this.gl.enableVertexAttribArray(this.matABCDCoordLocation);
+            const matABCDCoordLocation = this.gl.getAttribLocation(this.program, "aTrans");
+            this.gl.enableVertexAttribArray(matABCDCoordLocation);
+
+            const tintLocation = this.gl.getAttribLocation(this.program, "aTint");
+            this.gl.enableVertexAttribArray(tintLocation);
 
             this.indexBuffer = this.gl.createBuffer();
             this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
@@ -147,8 +155,9 @@ export default class Renderer {
             this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vertBuffer);
 
             this.gl.vertexAttribPointer(positionLocation, 4, this.gl.FLOAT, false, VERTEX_DATA_LENGTH, 0); // x, y, tx, ty -> 16
-            this.gl.vertexAttribPointer(this.matABCDCoordLocation, 4, this.gl.FLOAT, false, VERTEX_DATA_LENGTH, 16); // 16 -> a:, b, c, d -> 32
-            this.gl.vertexAttribPointer(texCoordLocation, 3, this.gl.FLOAT, false, VERTEX_DATA_LENGTH, 32); // 32 -> u, v, alpha -> 44
+            this.gl.vertexAttribPointer(matABCDCoordLocation, 4, this.gl.FLOAT, false, VERTEX_DATA_LENGTH, 16); //a, b, c, d -> 32
+            this.gl.vertexAttribPointer(tintLocation, 4, this.gl.FLOAT, false, VERTEX_DATA_LENGTH, 32); // u, v, alpha -> 48
+            this.gl.vertexAttribPointer(texCoordLocation, 3, this.gl.FLOAT, false, VERTEX_DATA_LENGTH, 48); // u, v, alpha -> 60
         }
     }
 
@@ -209,11 +218,12 @@ export default class Renderer {
         this.drawTriangles();
     }
 
-    public draw(sprite: Sprite, alpha?: number, blend?: string, poked?: boolean): void {
+    public draw(sprite: Sprite, alpha?: number, tint?: Vec4, blend?: string, poked?: boolean): void {
         if (!sprite.visible) {
             return;
         }
         alpha = (alpha || 1) * sprite.alpha;
+        tint = sprite.getTint() || tint || this.defaultTint;
         blend = sprite.getBlendMode() || blend || Renderer.BLEND_MODE.NORMAL;
         poked = sprite.updateGlobalTransform(poked);
 
@@ -262,6 +272,11 @@ export default class Renderer {
                 this.vertexData[this.vertexOffset++] = tr.skewX;
                 this.vertexData[this.vertexOffset++] = tr.skewY;
 
+                this.vertexData[this.vertexOffset++] = tint[0];
+                this.vertexData[this.vertexOffset++] = tint[1];
+                this.vertexData[this.vertexOffset++] = tint[2];
+                this.vertexData[this.vertexOffset++] = tint[3];
+
                 this.vertexData[this.vertexOffset++] = uv[i];
                 this.vertexData[this.vertexOffset++] = uv[i + 1];
                 this.vertexData[this.vertexOffset++] = alpha;
@@ -270,7 +285,7 @@ export default class Renderer {
         }
 
         for (let i = 0; i < sprite.children.length; i++) {
-            this.draw(sprite.children[i] as Sprite, alpha, blend, poked);
+            this.draw(sprite.children[i] as Sprite, alpha, tint, blend, poked);
         }
     }
 

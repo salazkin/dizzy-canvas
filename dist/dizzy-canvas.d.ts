@@ -75,6 +75,7 @@ export declare type Point = {
 	x: number;
 	y: number;
 };
+export declare type Vec4 = [number, number, number, number];
 export declare class Sprite extends Node {
 	protected texture: {
 		img?: HTMLImageElement;
@@ -93,6 +94,7 @@ export declare class Sprite extends Node {
 	protected display: {
 		visible: boolean;
 		alpha: number;
+		tint?: Vec4;
 		blend?: string;
 	};
 	constructor(texture?: HTMLImageElement, frame?: Rect);
@@ -111,6 +113,8 @@ export declare class Sprite extends Node {
 	setAnchor(x?: number, y?: number): void;
 	setBlendMode(value: string): void;
 	getBlendMode(): string;
+	setTint(color: number, alpha?: number): void;
+	getTint(): Vec4;
 	setTexture(img: HTMLImageElement, frame?: Rect): void;
 	getTexture(): HTMLImageElement | null;
 	setFrame(rect: Rect): void;
@@ -146,18 +150,18 @@ export declare class Renderer {
 	private readonly fs;
 	private readonly program;
 	private readonly vec2UniformLoc;
-	private readonly matABCDCoordLocation;
 	private readonly indexBuffer;
 	private readonly vertBuffer;
 	private currentTexture;
 	private currentBlendMode;
 	private readonly blendModes;
+	private readonly defaultTint;
 	constructor(canvas: HTMLCanvasElement);
 	resize(width: number, height: number): void;
 	createContext(): null | WebGLRenderingContext;
 	addTexture(image: HTMLImageElement): void;
 	present(): void;
-	draw(sprite: Sprite, alpha?: number, blend?: string, poked?: boolean): void;
+	draw(sprite: Sprite, alpha?: number, tint?: Vec4, blend?: string, poked?: boolean): void;
 	drawTriangles(): void;
 }
 export declare class Timer {

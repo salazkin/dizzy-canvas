@@ -1,5 +1,5 @@
 import Node from "./Node";
-import { Rect, Point } from "Types";
+import { Rect, Point, Vec4 } from "Types";
 
 export default class Sprite extends Node {
 
@@ -7,7 +7,7 @@ export default class Sprite extends Node {
     protected bounds: { rect?: Rect, boundsUpdated?: boolean; } | null = null;
     protected anchor: Point = { x: 0, y: 0 };
     protected mesh: { vertexes?: number[], uv?: number[], meshUpdated: boolean; } | null = null;
-    protected display: { visible: boolean, alpha: number, blend?: string; } = { visible: true, alpha: 1 };
+    protected display: { visible: boolean, alpha: number, tint?: Vec4, blend?: string; } = { visible: true, alpha: 1 };
 
     constructor(texture?: HTMLImageElement, frame?: Rect) {
         super("sprite");
@@ -80,12 +80,30 @@ export default class Sprite extends Node {
         this.anchorY = y;
     }
 
-    public setBlendMode(value: string) {
+    public setBlendMode(value: string): void {
         this.display.blend = value;
     }
 
     public getBlendMode(): string {
         return this.display.blend;
+    }
+
+    public setTint(color: number, alpha: number = 0.5): void {
+        const r = (color >> 16) / 255;
+        const g = (color >> 8 & 0xff) / 255;
+        const b = (color & 0xff) / 255;
+        if (this.display.tint === undefined) {
+            this.display.tint = [r, g, b, alpha];
+        } else {
+            this.display.tint[0] = r;
+            this.display.tint[1] = g;
+            this.display.tint[2] = b;
+            this.display.tint[3] = alpha;
+        }
+    }
+
+    public getTint(): Vec4 {
+        return this.display.tint;
     }
 
     public setTexture(img: HTMLImageElement, frame?: Rect): void {
