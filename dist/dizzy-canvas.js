@@ -15,7 +15,7 @@ class Transform {
         this.noSkew = true;
     }
     updateInfo() {
-        this.equalScale = (this.scaleX == this.scaleX);
+        this.equalScale = (this.scaleX == this.scaleY);
         this.noScale = (this.scaleX == 1 && this.scaleY == 1);
         this.equalSkew = (this.skewX == this.skewY);
         this.noSkew = (this.skewX === 0 && this.skewY === 0);
